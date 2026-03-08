@@ -7,7 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/static/app.css">
-  
+
   <style>
     .bg-gradient-primary {
       background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
@@ -16,7 +16,7 @@
   </style>
 </head>
 <body class="bg-light">
-  
+
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand fw-semibold" href="/">🌈 Rainbow Safe Uberlândia</a>
@@ -37,25 +37,44 @@
 
   <main class="container my-4">
     <div class="row g-4">
-      
+
       <div class="col-lg-6">
         <div class="card shadow-sm mb-4 border-top border-danger border-4">
           <div class="card-body p-4">
-            <h1 class="h4 fw-bold mb-1">Rede de Proteção da Comunidade ✨</h1>
-            <p class="text-secondary mb-3">Ninguém solta a mão de ninguém na UFU e em Uberlândia.</p>
+            <h1 class="h4 fw-bold mb-1">Rede de Apoio e Segurança ✨</h1>
+            <p class="text-secondary mb-3">
+              Apoio comunitário, orientação e deslocamento mais seguro para pessoas LGBTQIA+ na UFU e em Uberlândia.
+            </p>
+
+            <div class="alert alert-warning rounded-4 small border-warning">
+              <strong>Importante:</strong> este app é uma rede de apoio comunitário.
+              <br>
+              <strong>Em situação de risco imediato, ameaça ou agressão, ligue 190.</strong>
+              <br>
+              Para denunciar discriminação, violência ou outras violações de direitos humanos, use o
+              <a href="{{ safety.human_rights_report_url }}" target="_blank" rel="noopener noreferrer">Disque 100</a>.
+            </div>
 
             {% if not logged_in %}
-              <div class="alert alert-warning rounded-4 small border-warning">
-                <strong>Dica de ouro:</strong> Crie sua conta para acessar o mapa colaborativo e salvar sua rede de apoio (Mamys, migos, etc).
+              <div class="alert alert-light rounded-4 small border">
+                <strong>Dica:</strong> crie sua conta para acessar recursos com mais segurança, como mapa colaborativo e rede de apoio.
               </div>
             {% endif %}
 
-            <div class="d-grid gap-2 mb-2">
+            <div class="d-grid gap-2 mb-3">
+              <a href="tel:190" class="btn btn-dark btn-lg rounded-4 py-3 shadow-sm fw-bold">
+                🚓 Emergência — Ligar 190
+              </a>
+
               <button id="btnSOS" class="btn btn-danger btn-lg rounded-4 py-3 shadow-sm fw-bold">
-                🚨 BOTÃO DE PÂNICO (SOS)
+                🤝 Pedir apoio da rede
               </button>
+
+              <div class="small text-muted text-center" style="font-size: 0.8rem;">
+                Este alerta avisa sua rede de apoio. Não substitui atendimento policial em emergência.
+              </div>
             </div>
-            
+
             <div class="row g-2">
               <div class="col-sm-6">
                 <button id="btnCheckin" class="btn btn-info w-100 rounded-4 text-dark fw-bold shadow-sm" style="padding: 12px 0;">
@@ -64,30 +83,34 @@
               </div>
               <div class="col-sm-6">
                 <button id="btnTest" class="btn btn-outline-danger w-100 rounded-4" style="padding: 12px 0;">
-                  Testar Conexão SOS
+                  Testar Apoio da Rede
                 </button>
               </div>
             </div>
-            
+
             <div class="small text-muted mt-2 text-center" style="font-size: 0.75rem;">
-              O Check-in avisa silenciosamente que você "chegou bem", sem dar o alerta vermelho do SOS.
+              O Check-in avisa silenciosamente que você está bem, sem gerar o alerta principal.
             </div>
 
             <hr class="my-4">
 
-            <h2 class="h5 fw-bold mb-2 text-primary"><i class="bi bi-compass me-2"></i>Escolta Digital (Indo pra casa)</h2>
+            <h2 class="h5 fw-bold mb-2 text-primary">
+              <i class="bi bi-compass me-2"></i> Acompanhamento de trajeto
+            </h2>
             <p class="small text-secondary mb-3">
-              Vai voltar tarde? Ative o rastreio. Se a sua internet cair ou você demorar demais, a gente avisa sua rede de contatos.
+              Ative este modo para compartilhar seu deslocamento com sua rede de apoio.
+              Se você parar de atualizar por alguns minutos, o painel indicará <strong>“sem atualização”</strong>.
+              Se algo parecer estranho, use o botão <strong>“Alerta discreto”</strong>.
             </p>
 
             <div class="row g-2 align-items-end p-3 bg-light rounded-4 border">
               <div class="col-md-7">
-                <label class="form-label small fw-semibold">Pra onde você vai?</label>
+                <label class="form-label small fw-semibold">Para onde você vai?</label>
                 <input id="walkLabel" class="form-control bg-white" value="Ex: Casa / Terminal / UFU">
               </div>
 
               <div class="col-md-5">
-                <label class="form-label small fw-semibold">Avisar a cada:</label>
+                <label class="form-label small fw-semibold">Atualizar a cada:</label>
                 <select id="walkInterval" class="form-select bg-white">
                   <option value="30">30 seg (Rápido)</option>
                   <option value="60" selected>1 min (Padrão)</option>
@@ -96,7 +119,9 @@
               </div>
 
               <div class="col-12 d-grid mt-3">
-                <button id="btnWalkStart" class="btn btn-primary rounded-pill shadow-sm">Iniciar Escolta</button>
+                <button id="btnWalkStart" class="btn btn-primary rounded-pill shadow-sm">
+                  Iniciar acompanhamento
+                </button>
               </div>
             </div>
 
@@ -104,78 +129,97 @@
               <div class="alert alert-primary rounded-4 shadow-sm border-primary">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                   <div>
-                    <div class="fw-bold"><i class="bi bi-broadcast me-1"></i> Rota sendo monitorada</div>
-                    <div class="small mt-1">Cód. secreto: <span id="walkCode" class="font-monospace fw-bold bg-white px-2 py-1 rounded"></span></div>
+                    <div class="fw-bold"><i class="bi bi-broadcast me-1"></i> Trajeto em acompanhamento</div>
+                    <div class="small mt-1">
+                      Código: <span id="walkCode" class="font-monospace fw-bold bg-white px-2 py-1 rounded"></span>
+                    </div>
                     <div class="small text-secondary mt-2">
                       <i class="bi bi-clock-history me-1"></i> <span id="walkLastPing">Último check-in: —</span><br>
                       <i class="bi bi-hourglass-split me-1"></i> <span id="walkNextPing">Próximo em: —</span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div class="d-flex gap-2 flex-wrap mt-3 pt-3 border-top border-primary border-opacity-25">
-                  <button id="btnCopyLink" class="btn btn-sm btn-outline-primary rounded-pill flex-fill"><i class="bi bi-share me-1"></i> Link pra Mamys</button>
-                  <button id="btnWalkUncomfortable" class="btn btn-sm btn-warning rounded-pill flex-fill fw-bold text-dark"><i class="bi bi-exclamation-circle me-1"></i> Alerta Discreto</button>
-                  <button id="btnWalkFinish" class="btn btn-sm btn-success rounded-pill flex-fill fw-bold"><i class="bi bi-check2-circle me-1"></i> Cheguei Bem</button>
+                  <button id="btnCopyLink" class="btn btn-sm btn-outline-primary rounded-pill flex-fill">
+                    <i class="bi bi-share me-1"></i> Compartilhar link
+                  </button>
+                  <button id="btnWalkUncomfortable" class="btn btn-sm btn-warning rounded-pill flex-fill fw-bold text-dark">
+                    <i class="bi bi-exclamation-circle me-1"></i> Alerta discreto
+                  </button>
+                  <button id="btnWalkFinish" class="btn btn-sm btn-success rounded-pill flex-fill fw-bold">
+                    <i class="bi bi-check2-circle me-1"></i> Cheguei bem
+                  </button>
                 </div>
               </div>
             </div>
 
             <hr class="my-4">
 
-            <h2 class="h6 fw-bold mb-2">📞 Rede de Apoio</h2>
+            <h2 class="h6 fw-bold mb-2">📞 Rede de apoio</h2>
             <form id="contactForm" class="row g-2 bg-light p-3 rounded-4 border mb-3">
               <div class="col-12">
-                <input class="form-control bg-white" name="name" placeholder="Quem é? (Ex: Mamys, Best, Diva...)" required>
+                <input class="form-control bg-white" name="name" placeholder="Nome do contato" required>
               </div>
               <div class="col-md-7">
                 <input class="form-control bg-white" type="email" name="email" placeholder="Email (opcional)">
               </div>
               <div class="col-md-5">
-                <input class="form-control bg-white" type="tel" name="phone" placeholder="Celular/Zap">
+                <input class="form-control bg-white" type="tel" name="phone" placeholder="Celular / WhatsApp">
               </div>
               <div class="col-12 d-grid mt-2">
-                <button class="btn btn-dark rounded-pill btn-sm">Salvar Contato</button>
+                <button class="btn btn-dark rounded-pill btn-sm">Salvar contato</button>
               </div>
             </form>
 
-            <div class="small text-secondary fw-semibold mb-2">Quem recebe seus alertas:</div>
+            <div class="small text-secondary fw-semibold mb-2">Contatos que recebem seus avisos:</div>
             <ul id="contactsList" class="list-group list-group-flush border rounded-3"></ul>
           </div>
         </div>
       </div>
 
       <div class="col-lg-6">
-        
-        <div class="card shadow-lg border-0 bg-gradient-primary rounded-4 mb-4" style="transition: transform 0.2s;">
+
+        <div class="card shadow-lg border-0 bg-gradient-primary rounded-4 mb-4">
           <div class="card-body text-center py-5 px-4">
             <i class="bi bi-map text-white opacity-75 mb-2 d-block" style="font-size: 3rem;"></i>
-            <h2 class="h3 fw-bold mb-3">Mapa Colaborativo</h2>
+            <h2 class="h3 fw-bold mb-3">Mapa colaborativo</h2>
             <p class="mb-4 text-white" style="font-size: 1.05rem; opacity: 0.9;">
-              Consulte rotas seguras, pontos de apoio e áreas que devemos evitar ao redor dos campi da UFU.
+              Consulte rotas mais tranquilas, pontos de apoio e áreas que merecem atenção ao redor dos campi da UFU.
             </p>
             <a href="/mapa" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary shadow">
-              <i class="bi bi-search me-2"></i> Explorar o Mapa
+              <i class="bi bi-search me-2"></i> Explorar o mapa
             </a>
           </div>
         </div>
 
         <div class="card shadow-sm border-top border-success border-4">
           <div class="card-body p-4">
-            <h2 class="h5 fw-bold mb-1 text-success"><i class="bi bi-car-front-fill me-2"></i> Caroninha Segura</h2>
+            <h2 class="h5 fw-bold mb-1 text-success">
+              <i class="bi bi-car-front-fill me-2"></i> Carona com cuidado
+            </h2>
             <p class="small text-secondary mb-3">
-              Membros verificados da comunidade oferecendo trajetos seguros pras monas e pros migos.
+              Rede comunitária de caronas com mais segurança e responsabilidade.
             </p>
 
             <div class="alert alert-warning rounded-3 small border-warning py-2">
-              <i class="bi bi-shield-exclamation me-1"></i> Combine pontos de encontro movimentados. <strong>Nunca</strong> mande seu endereço exato no chat.
+              <i class="bi bi-shield-exclamation me-1"></i>
+              <strong>Segurança primeiro:</strong> prefira caronas apenas com pessoas que você conhece pessoalmente.
+              Combine em <strong>ponto público</strong> e <strong>nunca compartilhe endereço exato</strong>.
+            </div>
+
+            <div class="small mb-3">
+              <strong>Sofreu discriminação, ameaça ou violência?</strong><br>
+              <a href="{{ safety.human_rights_report_url }}" target="_blank" rel="noopener noreferrer">
+                {{ safety.human_rights_report_label }}
+              </a>
             </div>
 
             <div class="accordion mb-4" id="accordionCarpool">
               <div class="accordion-item border rounded-3 overflow-hidden">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed fw-semibold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCarpool">
-                    🚗 Quero dar carona pras bees! (Cadastrar perfil)
+                    🚗 Quero oferecer carona (cadastrar perfil)
                   </button>
                 </h2>
                 <div id="collapseCarpool" class="accordion-collapse collapse" data-bs-parent="#accordionCarpool">
@@ -184,15 +228,35 @@
                       <div class="col-12">
                         <input class="form-control" name="full_name" placeholder="Seu nome completo" required>
                       </div>
+
                       <div class="col-12">
-                        <input class="form-control" type="email" name="email" placeholder="Seu email institucional" required>
+                        <input class="form-control" type="email" name="email" placeholder="Seu email" required>
                       </div>
+
                       <div class="col-12">
-                        <input class="form-control" type="tel" name="phone" placeholder="Telefone de contato">
+                        <input class="form-control" type="tel" name="phone" placeholder="Telefone de contato" required>
                       </div>
+
+                      <div class="col-md-6">
+                        <input class="form-control" name="ride_from" placeholder="De onde você sai?">
+                      </div>
+
+                      <div class="col-md-6">
+                        <input class="form-control" name="ride_to" placeholder="Para onde você vai?">
+                      </div>
+
+                      <div class="col-md-6">
+                        <input class="form-control" name="ride_time" placeholder="Horário aproximado">
+                      </div>
+
+                      <div class="col-md-6">
+                        <input class="form-control" name="meeting_point" placeholder="Ponto de encontro público">
+                      </div>
+
                       <div class="col-12 d-grid mt-2">
-                        <button class="btn btn-success rounded-pill">Enviar Perfil para Aprovação</button>
+                        <button class="btn btn-success rounded-pill">Enviar perfil para aprovação</button>
                       </div>
+
                       <div class="col-12 text-center mt-2">
                         <div id="rideApplyStatus" class="small"></div>
                       </div>
@@ -202,7 +266,7 @@
               </div>
             </div>
 
-            <div class="small text-secondary fw-semibold mb-2">Ofertantes online agora:</div>
+            <div class="small text-secondary fw-semibold mb-2">Ofertantes aprovados:</div>
             <ul id="rideApprovedList" class="list-group list-group-flush border rounded-3"></ul>
           </div>
         </div>
@@ -220,12 +284,12 @@
             <i class="bi bi-car-front-fill text-primary fs-4"></i>
           </div>
           <h5 class="modal-title h6 fw-bold mb-0">Conversando com <span id="chatWith" class="text-info"></span></h5>
-          <span class="badge bg-success mt-1 rounded-pill" style="font-size: 0.65rem;">Conexão Segura</span>
+          <span class="badge bg-success mt-1 rounded-pill" style="font-size: 0.65rem;">Conexão segura</span>
         </div>
-        
+
         <div class="modal-body p-0 d-flex flex-column" style="background-color: #e9ecef;">
           <div class="bg-warning text-dark text-center p-2 small fw-semibold shadow-sm" style="font-size: 0.8rem; z-index: 10;">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i> Não envie seu endereço exato.
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Não envie endereço exato.
           </div>
 
           <div id="chatMsgs" class="p-3" style="min-height: 350px; max-height: 450px; overflow-y: auto; flex: 1;">
@@ -241,7 +305,7 @@
           </div>
           <div class="d-flex justify-content-between align-items-center w-100 px-1 mt-1">
             <button id="chatReport" class="btn btn-sm btn-link text-danger text-decoration-none p-0 fw-semibold" style="font-size: 0.8rem;">
-              <i class="bi bi-flag-fill me-1"></i> Denunciar Comportamento
+              <i class="bi bi-flag-fill me-1"></i> Denunciar comportamento
             </button>
             <div class="small text-secondary" id="chatStatus" style="font-size: 0.8rem;"></div>
           </div>
