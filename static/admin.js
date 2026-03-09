@@ -47,6 +47,19 @@ function fmtMMSS(totalSec) {
   return `${mm}:${ss}`;
 }
 
+function formatWhatsAppLink(phone) {
+  if (!phone) return "#";
+  // Remove tudo que não for número
+  let cleanPhone = phone.replace(/\D/g, "");
+  
+  // Se tiver 10 ou 11 dígitos, adiciona o '55' do Brasil
+  if (cleanPhone.length === 10 || cleanPhone.length === 11) {
+    cleanPhone = "55" + cleanPhone;
+  }
+  
+  return `https://wa.me/${cleanPhone}`;
+}
+
 // ==========================================
 // 📞 CONTATOS DE CONFIANÇA
 // ==========================================
@@ -67,10 +80,22 @@ async function refreshContacts() {
     for (const c of contacts) {
       const li = document.createElement("li");
       li.className = "list-group-item d-flex justify-content-between align-items-center";
+      
+      let phoneHtml = "";
+      if (c.phone) {
+        const waLink = formatWhatsAppLink(c.phone);
+        phoneHtml = `
+          <a href="${waLink}" target="_blank" class="text-decoration-none text-success small fw-semibold d-inline-block mt-1">
+            <i class="bi bi-whatsapp"></i> ${escapeHtml(c.phone)}
+          </a>
+        `;
+      }
+
       li.innerHTML = `
         <div>
           <div class="fw-semibold text-dark">${escapeHtml(c.name)}</div>
-          <div class="small text-secondary">${escapeHtml(c.email || "")}${c.phone ? " • " + escapeHtml(c.phone) : ""}</div>
+          <div class="small text-secondary">${escapeHtml(c.email || "")}</div>
+          ${phoneHtml}
         </div>
         <button class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-trash"></i></button>
       `;
@@ -322,7 +347,6 @@ document.getElementById("btnWalkFinish")?.addEventListener("click", finishWalk);
 
 document.getElementById("btnCopyLink")?.addEventListener("click", async () => {
   try {
-    // Aponta para a UFU ou Painel do Admin
     const link = `${location.origin}/admin`;
     await navigator.clipboard.writeText(`Acompanhe minha rota no Rainbow Safe. Link: ${link} | Código da Sessão: ${document.getElementById("walkCode").textContent}`);
     toast("Link copiado! Envie no WhatsApp ou Telegram.", "info");
@@ -421,7 +445,8 @@ if (rideForm) {
       rideForm.reset();
       await refreshApprovedRides();
     } catch (e2) {
-      document.getElementById("rideApplyStatus").innerHTML = `<span class="text-danger fw-bold">${e2.message}</span>`;
+      // Correção de segurança: Proteção contra XSS
+      document.getElementById("rideApplyStatus").innerHTML = `<span class="text-danger fw-bold">${escapeHtml(e2.message)}</span>`;
     }
   });
 
@@ -439,7 +464,6 @@ async function loadChatMessages() {
     const box = document.getElementById("chatMsgs");
     if (!box) return;
 
-    // Guarda a altura do scroll antes de atualizar
     const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
     box.innerHTML = "";
@@ -450,11 +474,9 @@ async function loadChatMessages() {
     }
 
     for (const m of msgs) {
-      // Determina as classes CSS baseado em quem enviou
       const isRider = m.sender === "rider";
       const bubbleClass = isRider ? "rider" : "anonymous";
       
-      // Formata a hora para exibir no balãozinho
       const msgDate = new Date(m.created_at);
       const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -467,7 +489,6 @@ async function loadChatMessages() {
       box.appendChild(row);
     }
 
-    // Só desce o scroll automaticamente se o usuário já estava no final da conversa
     if (isScrolledToBottom) {
       box.scrollTop = box.scrollHeight;
     }
@@ -475,6 +496,9 @@ async function loadChatMessages() {
 }
 
 function openChatModal(threadId, withName) {
+  // Correção de memória: limpa o timer anterior caso o modal seja reaberto rapidamente
+  if (chatState.timer) clearInterval(chatState.timer);
+
   chatState.threadId = threadId;
 
   const withEl = document.getElementById("chatWith");
@@ -488,13 +512,11 @@ function openChatModal(threadId, withName) {
   if (statusEl) statusEl.textContent = "";
   if (inputEl) inputEl.value = "";
 
-  // Força o Bootstrap a renderizar
   const modal = new bootstrap.Modal(modalEl);
   modal.show();
 
   loadChatMessages();
 
-  if (chatState.timer) clearInterval(chatState.timer);
   chatState.timer = setInterval(loadChatMessages, 2500);
 
   modalEl.addEventListener("hidden.bs.modal", () => {
@@ -514,14 +536,12 @@ document.getElementById("chatSend")?.addEventListener("click", async () => {
   try {
     await api(`/api/chat/${chatState.threadId}/send`, {
       method: "POST",
-      // Quem está usando essa interface é o aluno querendo a carona (anonymous)
       body: JSON.stringify({ sender: "anonymous", text })
     });
 
     input.value = "";
     await loadChatMessages();
     
-    // Força descer o scroll após enviar a própria mensagem
     const box = document.getElementById("chatMsgs");
     if(box) box.scrollTop = box.scrollHeight;
     
@@ -546,7 +566,7 @@ document.getElementById("chatReport")?.addEventListener("click", async () => {
 
   try {
     const reason = prompt("Descreva o comportamento inadequado (ex: pedindo endereço, assédio, etc):") || "";
-    if(!reason) return; // Se cancelar o prompt
+    if(!reason) return; 
     
     await api(`/api/chat/${chatState.threadId}/report`, {
       method: "POST",
@@ -554,7 +574,8 @@ document.getElementById("chatReport")?.addEventListener("click", async () => {
     });
 
     const statusEl = document.getElementById("chatStatus");
-    if (statusEl) statusEl.innerHTML = "<span class="text-danger fw-bold"><i class='bi bi-shield-check'></i> Denúncia Registrada.</span>";
+    // Correção de sintaxe: aspas consertadas aqui
+    if (statusEl) statusEl.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-shield-check"></i> Denúncia Registrada.</span>`;
     toast("A equipe de moderação foi acionada e o chat será bloqueado.", "danger");
   } catch (e) {
     toast("Falha ao registrar a denúncia.", "danger");
