@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mural da Comunidade • Rainbow Safe</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <link rel="stylesheet" href="/static/app.css">
+  
+  <style>
+    body { background-color: #f0f2f5; }
+    .bg-gradient-mural {
+      background: linear-gradient(135deg, #d63384 0%, #6f42c1 100%);
+      color: white;
+    }
+    .post-card {
+      transition: transform 0.2s ease;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+    }
+    textarea { resize: none; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand fw-semibold d-flex align-items-center" href="/">
+        <i class="bi bi-arrow-left-circle me-2"></i> Voltar ao Início
+      </a>
+      <span class="badge bg-light text-dark rounded-pill px-3 py-2 fw-bold">
+        <i class="bi bi-chat-heart-fill text-danger me-1"></i> Mural
+      </span>
+    </div>
+  </nav>
+
+  <main class="container my-4" style="max-width: 680px;">
+    
+    <div class="card shadow-lg border-0 bg-gradient-mural rounded-4 mb-4">
+      <div class="card-body text-center p-4">
+        <h1 class="h3 fw-bold mb-2">Mural da Comunidade</h1>
+        <p class="mb-0" style="opacity: 0.9; font-size: 0.95rem;">
+          Um espaço seguro para trocar avisos, divulgar eventos ou deixar uma mensagem de acolhimento para a rede.
+        </p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm rounded-4 mb-4 border-0">
+      <div class="card-body p-4">
+        <h2 class="h6 fw-bold text-dark mb-3">
+          <i class="bi bi-pencil-square text-primary me-1"></i> O que você quer compartilhar?
+        </h2>
+        
+        <form id="postForm">
+          <div class="form-floating mb-3">
+            <textarea class="form-control bg-light border-0" id="postContent" placeholder="Escreva aqui..." style="height: 100px" required maxlength="500"></textarea>
+            <label for="postContent" class="text-secondary small">Máx: 500 caracteres</label>
+          </div>
+          
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="postAnonymous">
+              <label class="form-check-label small fw-semibold text-secondary" for="postAnonymous">
+                <i class="bi bi-incognito me-1"></i> Postar como Anônime
+              </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnSubmitPost">
+              Publicar <i class="bi bi-send-fill ms-1"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-end mb-3 px-1">
+      <h3 class="h6 fw-bold text-secondary mb-0">Últimas Publicações</h3>
+      <button class="btn btn-sm btn-link text-decoration-none text-muted" onclick="loadPosts()">
+        <i class="bi bi-arrow-clockwise"></i> Atualizar
+      </button>
+    </div>
+
+    <div id="muralFeed" class="d-flex flex-column gap-3">
+      <div class="text-center text-muted py-5">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div> Carregando mural...
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/app.js"></script>
+  
+  <script>
+    // Lógica Específica do Mural Comunitário
+    const postForm = document.getElementById("postForm");
+    const muralFeed = document.getElementById("muralFeed");
+    const btnSubmitPost = document.getElementById("btnSubmitPost");
+
+    // Carregar Posts
+    async function loadPosts() {
+      try {
+        const posts = await api("/api/posts");
+        
+        if (posts.length === 0) {
+          muralFeed.innerHTML = `
+            <div class="card shadow-sm border-0 rounded-4 p-5 text-center bg-white">
+              <i class="bi bi-inbox text-muted mb-3" style="font-size: 2.5rem;"></i>
+              <h5 class="text-dark fw-bold">O mural está vazio</h5>
+              <p class="text-secondary small mb-0">Seja a primeira pessoa a compartilhar algo com a rede!</p>
+            </div>
+          `;
+          return;
+        }
+
+        muralFeed.innerHTML = posts.map(p => {
+          // Define a cor e o ícone baseado no anonimato
+          const isAnon = p.author === "Anônime";
+          const avatarIcon = isAnon ? '<i class="bi bi-incognito"></i>' : '<i class="bi bi-person-fill"></i>';
+          const authorColor = isAnon ? 'text-secondary' : 'text-primary';
+          
+          // Se for o próprio autor, não mostra botão de denunciar
+          const reportBtn = p.is_mine 
+            ? `<span class="badge bg-light text-dark border small"><i class="bi bi-check-circle me-1"></i>Seu Post</span>` 
+            : `<button class="btn btn-sm text-danger p-0 border-0" onclick="reportPost(${p.id})" title="Denunciar postagem"><i class="bi bi-flag-fill"></i> Denunciar</button>`;
+
+          return `
+            <div class="card post-card rounded-4 bg-white">
+              <div class="card-body p-3 p-sm-4">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center ${authorColor}" style="width: 40px; height: 40px; font-size: 1.2rem;">
+                      ${avatarIcon}
+                    </div>
+                    <div>
+                      <div class="fw-bold ${authorColor}" style="font-size: 0.95rem;">${escapeHtml(p.author)}</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">${p.created_at}</div>
+                    </div>
+                  </div>
+                  <div>${reportBtn}</div>
+                </div>
+                <div class="mt-3 text-dark" style="font-size: 1.05rem; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(p.content)}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+      } catch (e) {
+        muralFeed.innerHTML = `<div class="alert alert-danger rounded-4">Erro ao carregar publicações: ${e.message}</div>`;
+      }
+    }
+
+    // Criar Novo Post
+    postForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const content = document.getElementById("postContent").value;
+      const isAnon = document.getElementById("postAnonymous").checked;
+      
+      btnSubmitPost.disabled = true;
+      btnSubmitPost.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      try {
+        await api("/api/posts", {
+          method: "POST",
+          body: JSON.stringify({ content: content, is_anonymous: isAnon })
+        });
+        
+        postForm.reset();
+        toast("Publicação enviada com sucesso!", "success");
+        await loadPosts(); // Recarrega o feed
+      } catch (e) {
+        toast("Erro ao publicar: " + e.message, "danger");
+      } finally {
+        btnSubmitPost.disabled = false;
+        btnSubmitPost.innerHTML = 'Publicar <i class="bi bi-send-fill ms-1"></i>';
+      }
+    });
+
+    // Denunciar Post
+    window.reportPost = async (postId) => {
+      if (confirm("Conteúdo ofensivo ou inadequado? Confirmar denúncia?")) {
+        try {
+          await api(`/api/posts/${postId}/report`, { method: "POST", body: "{}" });
+          toast("Denúncia registrada. A moderação irá analisar.", "warning");
+          loadPosts(); // Recarrega para ver se o post sumiu (caso atinja 5 denúncias)
+        } catch (e) {
+          toast(e.message, "danger");
+        }
+      }
+    };
+
+    // Inicializa o feed
+    loadPosts();
+  </script>
+</body>
+</html>
