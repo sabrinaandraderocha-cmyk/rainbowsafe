@@ -838,7 +838,14 @@ def block_thread(tid):
     db.session.commit()
     return jsonify({"ok": True})
 
+# === ROTA DE RESET (AGORA NA POSIÇÃO CORRETA, ANTES DO APP.RUN) ===
+@app.get("/resetar-banco-render")
+def resetar_banco():
+    db.drop_all()  # Apaga todas as tabelas velhas
+    db.create_all()  # Recria as tabelas com a estrutura nova
+    return "Banco de dados do Render/Neon resetado com sucesso! Pode voltar para a Home e criar sua conta."
 
+# === INICIALIZADOR DO SERVIDOR (DEVE SER SEMPRE O ÚLTIMO BLOCO DO ARQUIVO) ===
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
