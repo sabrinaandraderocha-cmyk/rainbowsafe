@@ -18,13 +18,12 @@ async function api(url, opts = {}) {
     }
     throw new Error(errMsg);
   }
-
   return res.json();
 }
 
 function toast(msg, type = "dark") {
   const el = document.createElement("div");
-  el.className = `alert alert-${type} shadow-lg rounded-3 fw-semibold px-4`;
+  el.className = `alert alert-${type} shadow-lg rounded-pill fw-semibold px-4`;
   el.style.position = "fixed";
   el.style.left = "50%";
   el.style.transform = "translateX(-50%)";
@@ -40,11 +39,7 @@ function toast(msg, type = "dark") {
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[m]);
 }
 
@@ -52,9 +47,7 @@ function getPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("Sem suporte a GPS"));
     navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
+      enableHighAccuracy: true, timeout: 10000, maximumAge: 0
     });
   });
 }
@@ -69,7 +62,7 @@ function renderRideMeta(u) {
 }
 
 // ==========================================
-// APOIO DA REDE / ALERTAS (SOS / CHECK-IN)
+// APOIO DA REDE / ALERTAS
 // ==========================================
 
 async function sendAlert(kind, message, coords) {
@@ -81,74 +74,77 @@ async function sendAlert(kind, message, coords) {
     payload.accuracy = coords.accuracy;
   }
 
-  const out = await api("/api/alerts", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
+  try {
+    const out = await api("/api/alerts", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
 
-  if (out.telegram && out.telegram.sent) {
-    toast(`Alerta enviado para sua rede de apoio! ✅`, kind === "SOS" ? "danger" : "success");
-  } else {
-    toast("Alerta registrado no sistema.", "warning");
+    if (out.telegram && out.telegram.sent) {
+      toast(`Aviso enviado para a rede de apoio! ✅`, kind === "SOS" ? "danger" : "success");
+    } else {
+      toast("Aviso registrado, mas Telegram falhou.", "warning");
+    }
+    return out;
+  } catch (e) {
+    toast("Erro ao contactar servidor: " + e.message, "danger");
+    throw e;
   }
-
-  return out;
 }
 
-const btnSOS = document.getElementById("btnSOS");
-if (btnSOS) {
-  btnSOS.addEventListener("click", async () => {
-    if (!confirm("🚨 Tem certeza? Isso enviará um alerta para a sua rede com a sua localização!")) return;
+document.getElementById("btnSOS")?.addEventListener("click", async () => {
+  if (!confirm("🚨 Tem certeza? Isso enviará um alerta para a sua rede com a sua localização!")) return;
 
-    btnSOS.disabled = true;
-    const oldHtml = btnSOS.innerHTML;
-    btnSOS.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Buscando GPS...`;
+  const btn = document.getElementById("btnSOS");
+  const oldHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Buscando GPS...';
 
+  try {
+    let coords = null;
     try {
-      let coords = null;
-      try {
-        const pos = await getPosition();
-        coords = pos.coords;
-      } catch (e) {
-        toast("Não foi possível pegar o GPS. O apoio será enviado sem mapa.", "warning");
-      }
-
-      await sendAlert("SOS", "Alerta de Emergência", coords);
+      const pos = await getPosition();
+      coords = pos.coords;
     } catch (e) {
-      toast("Erro ao pedir apoio da rede.", "danger");
-    } finally {
-      btnSOS.disabled = false;
-      btnSOS.innerHTML = oldHtml;
+      toast("Sem GPS. O alerta será enviado sem mapa.", "warning");
     }
-  });
-}
+    await sendAlert("SOS", "🚨 Alerta de Emergência", coords);
+  } catch (e) {
+    // Erro já tratado no sendAlert
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = oldHtml;
+  }
+});
 
-const btnCheckin = document.getElementById("btnCheckin");
-if (btnCheckin) {
-  btnCheckin.addEventListener("click", async () => {
-    btnCheckin.disabled = true;
-    const oldHtml = btnCheckin.innerHTML;
-    btnCheckin.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Registrando...`;
+document.getElementById("btnCheckin")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btnCheckin");
+  const oldHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Registrando...';
 
+  try {
+    let coords = null;
     try {
-      let coords = null;
-      try {
-        const pos = await getPosition();
-        coords = pos.coords;
-      } catch (e) {
-        console.warn("Check-in sem GPS");
-      }
+      const pos = await getPosition();
+      coords = pos.coords;
+    } catch (e) {}
+    await sendAlert("CHECKIN", "📍 Check-in: Cheguei em segurança.", coords);
+  } catch (e) {} finally {
+    btn.disabled = false;
+    btn.innerHTML = oldHtml;
+  }
+});
 
-      await sendAlert("CHECKIN", "Check-in de segurança: cheguei bem a um ponto do meu trajeto.", coords);
-      toast("Check-in de segurança registrado com sucesso!", "success");
-    } catch (e) {
-      toast("Falha ao registrar check-in.", "danger");
-    } finally {
-      btnCheckin.disabled = false;
-      btnCheckin.innerHTML = oldHtml;
-    }
-  });
-}
+document.getElementById("btnTest")?.addEventListener("click", async () => {
+  const btn = document.getElementById("btnTest");
+  btn.disabled = true;
+  try {
+    await sendAlert("TEST", "Teste da rede de apoio (sem localização).", null);
+  } catch (e) {} finally {
+    btn.disabled = false;
+  }
+});
 
 // ==========================================
 // ACOMPANHAMENTO DE TRAJETO ("ME ACOMPANHA?")
@@ -157,37 +153,35 @@ if (btnCheckin) {
 let walkSessionCode = null;
 let walkIntervalId = null;
 
-const btnWalkStart = document.getElementById("btnWalkStart");
-if (btnWalkStart) {
-  btnWalkStart.addEventListener("click", async () => {
-    const labelInput = document.getElementById("walkLabel");
-    const label = labelInput && labelInput.value.trim() !== "" ? labelInput.value.trim() : "Voltando pra casa";
+document.getElementById("btnWalkStart")?.addEventListener("click", async () => {
+  const btnStart = document.getElementById("btnWalkStart");
+  const labelInput = document.getElementById("walkLabel");
+  const label = labelInput && labelInput.value.trim() !== "" ? labelInput.value.trim() : "Voltando pra casa";
 
-    try {
-      btnWalkStart.disabled = true;
-      btnWalkStart.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
+  btnStart.disabled = true;
+  btnStart.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
 
-      const res = await api("/api/walk/start", {
-        method: "POST",
-        body: JSON.stringify({ label })
-      });
+  try {
+    const res = await api("/api/walk/start", {
+      method: "POST",
+      body: JSON.stringify({ label })
+    });
 
-      walkSessionCode = res.session_code;
-      document.getElementById("walkBox").classList.remove("d-none");
-      document.getElementById("walkCode").textContent = walkSessionCode;
+    walkSessionCode = res.session_code;
+    document.getElementById("walkCode").textContent = walkSessionCode;
+    document.getElementById("walkBox").classList.remove("d-none");
 
-      await walkPing();
-      walkIntervalId = setInterval(walkPing, 60000); // 60 segundos fixo
+    await walkPing();
+    walkIntervalId = setInterval(walkPing, 60000); 
 
-      toast("Rastreador ativado! Compartilhe o link.", "success");
-    } catch (e) {
-      toast(e.message, "danger");
-    } finally {
-      btnWalkStart.disabled = false;
-      btnWalkStart.innerHTML = 'Começar Trajeto';
-    }
-  });
-}
+    toast("Rastreador ativado! Envie o link para alguém.", "primary");
+  } catch (e) {
+    toast("Erro: " + e.message, "danger");
+  } finally {
+    btnStart.disabled = false;
+    btnStart.innerHTML = '<i class="bi bi-play-fill me-1"></i> Começar Trajeto';
+  }
+});
 
 async function walkPing() {
   if (!walkSessionCode) return;
@@ -209,7 +203,7 @@ async function walkPing() {
     const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
     
     const lastEl = document.getElementById("walkLastPing");
-    if (lastEl) lastEl.textContent = `Última atualização: ${timeStr}`;
+    if (lastEl) lastEl.textContent = `Última atualização de satélite: ${timeStr}`;
   } catch (e) {
     console.error("Falha no check-in do trajeto", e);
   }
@@ -230,9 +224,7 @@ document.getElementById("btnWalkFinish")?.addEventListener("click", async () => 
 
     document.getElementById("walkBox").classList.add("d-none");
     toast("Acompanhamento encerrado. Que bom que chegou bem!", "success");
-    
-    // Opcional: Avisar a rede que encerrou
-    await sendAlert("CHECKIN", "Cheguei ao destino (Modo Acompanhamento encerrado).", null);
+    await sendAlert("CHECKIN", "Cheguei ao destino (Acompanhamento encerrado).", null);
   } catch (e) {
     toast(e.message, "danger");
   }
@@ -245,37 +237,23 @@ document.getElementById("btnWalkUncomfortable")?.addEventListener("click", async
 
   try {
     let coords = null;
-    try {
-      const pos = await getPosition();
-      coords = pos.coords;
-    } catch (e) {}
-
-    await sendAlert(
-      "CHECKIN",
-      "ALERTA DISCRETO: estou desconfortável durante o trajeto. Fiquem de olho no mapa.",
-      coords
-    );
-
-    toast("Alerta discreto enviado para a rede.", "warning");
-  } catch (e) {
-    toast("Erro ao enviar o alerta.", "danger");
-  } finally {
+    try { const pos = await getPosition(); coords = pos.coords; } catch (e) {}
+    await sendAlert("CHECKIN", "ALERTA DISCRETO: estou desconfortável durante o trajeto. Fiquem de olho.", coords);
+  } catch (e) {} finally {
     btn.disabled = false;
   }
 });
 
 document.getElementById("btnCopyLink")?.addEventListener("click", () => {
   if (!walkSessionCode) return;
-
   const link = `${window.location.origin}/rastrear/${walkSessionCode}`;
   try {
     const mensagem = encodeURIComponent(`📍 Acompanhe minha rota pelo Rainbow Safe. Se eu sumir, acione a rede!\n\nLink: ${link}`);
     window.open(`https://api.whatsapp.com/send?text=${mensagem}`, "_blank");
   } catch (e) {
-    toast("Não foi possível gerar o link.", "danger");
+    toast("Falha ao gerar link.", "danger");
   }
 });
-
 
 // ==========================================
 // CONTATOS DE CONFIANÇA ("MINHA REDE")
@@ -290,17 +268,17 @@ if (contactForm && contactsList) {
       const data = await api("/api/contacts");
       
       if (data.length === 0) {
-        contactsList.innerHTML = `<li class="list-group-item text-secondary border-0 text-center py-3 bg-light rounded-3">Nenhum contato cadastrado ainda.</li>`;
+        contactsList.innerHTML = `<li class="list-group-item text-secondary border-0 text-center py-4 bg-light rounded-4">Nenhum contato cadastrado ainda.</li>`;
         return;
       }
 
       contactsList.innerHTML = data.map(c => `
         <li class="list-group-item d-flex justify-content-between align-items-center py-3">
           <div>
-            <div class="fw-semibold text-dark">${escapeHtml(c.name)}</div>
-            <div class="small text-secondary">${escapeHtml(c.email || "")}${c.phone ? " • " + escapeHtml(c.phone) : ""}</div>
+            <div class="fw-bold text-dark">${escapeHtml(c.name)}</div>
+            <div class="small text-secondary"><i class="bi bi-whatsapp text-success me-1"></i>${escapeHtml(c.phone || c.email || '')}</div>
           </div>
-          <button class="btn btn-sm btn-outline-danger rounded-3 px-3" onclick="deleteContact(${c.id})">
+          <button class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="deleteContact(${c.id})">
             <i class="bi bi-trash"></i>
           </button>
         </li>
@@ -382,7 +360,7 @@ if (rideApprovedList) {
 
       if (data.length === 0) {
         rideApprovedList.innerHTML =
-          `<li class="list-group-item text-secondary text-center py-3 bg-light rounded-3 border-0 mt-2">Nenhuma carona disponível na rede neste momento.</li>`;
+          `<li class="list-group-item text-secondary text-center py-4 bg-light rounded-4 border-0 mt-2">Nenhuma carona disponível na rede neste momento.</li>`;
         return;
       }
 
@@ -395,9 +373,9 @@ if (rideApprovedList) {
               </span>
               <small class="text-secondary d-block mt-1">${renderRideMeta(u) || "Trajeto não informado."}</small>
             </div>
-            <button class="btn btn-sm btn-dark rounded-3 px-3 shadow-sm"
+            <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold"
               onclick="openChat(${u.id}, '${escapeHtml(u.display_name)}')">
-               Chat Seguro
+               <i class="bi bi-chat-dots me-1"></i> Conversar
             </button>
           </div>
         </li>
