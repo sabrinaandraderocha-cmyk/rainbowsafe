@@ -261,7 +261,7 @@ def public_tracker(code):
     ws = WalkSession.query.filter_by(session_code=code).first()
     if not ws:
         return "Sessão expirada ou não encontrada.", 404
-    return render_template("tracker.html", session_code=ws.session_code, label=ws.label)
+    return render_template("rastrear.html", session_code=ws.session_code, label=ws.label)
 
 @app.get("/mural")
 @login_required
