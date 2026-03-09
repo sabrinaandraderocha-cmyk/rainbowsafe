@@ -22,7 +22,6 @@ load_dotenv()
 
 db = SQLAlchemy()
 
-
 def normalize_database_url(url: str) -> str:
     """
     Deixa o app pronto para Neon / Render / Postgres.
@@ -43,7 +42,6 @@ def normalize_database_url(url: str) -> str:
 
     return url
 
-
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-key-mudar-em-prod")
@@ -57,16 +55,13 @@ def create_app():
     db.init_app(app)
     return app
 
-
 app = create_app()
-
 
 # ---------------------------
 # Helpers (admin + auth + privacy)
 # ---------------------------
 def is_admin() -> bool:
     return session.get("is_admin") is True
-
 
 def admin_required(fn):
     @wraps(fn)
@@ -76,10 +71,8 @@ def admin_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-
 def is_logged_in() -> bool:
     return session.get("user_id") is not None
-
 
 def login_required(fn):
     @wraps(fn)
@@ -91,7 +84,6 @@ def login_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-
 def public_name(full_name: str) -> str:
     """Retorna 'Nome L.' (anonimizado)."""
     if not full_name:
@@ -101,18 +93,15 @@ def public_name(full_name: str) -> str:
     last_initial = (parts[-1][0].upper() + ".") if len(parts) > 1 else ""
     return f"{first} {last_initial}".strip()
 
-
 _ADDRESS_PATTERNS = [
     r"\bn[ºo]\s*\d{1,5}\b",
     r"\bcep\b\s*\d{5}-?\d{3}\b",
     r"\bavenida\b|\bav\.\b|\brua\b|\br\.\b",
 ]
 
-
 def looks_like_address(text: str) -> bool:
     t = (text or "").lower()
     return any(re.search(p, t) for p in _ADDRESS_PATTERNS)
-
 
 def safety_guidance_payload():
     return {
@@ -121,7 +110,6 @@ def safety_guidance_payload():
         "human_rights_report_url": "https://www.gov.br/pt-br/servicos/denunciar-violacao-de-direitos-humanos",
         "human_rights_report_label": "Disque 100 — denunciar discriminação e violações de direitos humanos",
     }
-
 
 # ---------------------------
 # Models
@@ -135,6 +123,17 @@ class Account(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Post(db.Model):
+    """NOVO: Modelo do Mural Comunitário"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    is_anonymous = db.Column(db.Boolean, default=False)
+    report_count = db.Column(db.Integer, default=0)
+    is_hidden = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    author = db.relationship("Account", backref="posts")
 
 class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -142,7 +141,6 @@ class Contact(db.Model):
     email = db.Column(db.String(200), nullable=True)
     phone = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -152,7 +150,6 @@ class Alert(db.Model):
     lon = db.Column(db.Float, nullable=True)
     accuracy = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 class Place(db.Model):
     """Mapa colaborativo seguro."""
@@ -168,7 +165,6 @@ class Place(db.Model):
     expires_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
 class WalkSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_code = db.Column(db.String(32), unique=True, nullable=False)
@@ -179,27 +175,21 @@ class WalkSession(db.Model):
     last_lon = db.Column(db.Float, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
-
 class User(db.Model):
-    """
-    Ofertantes de carona comunitária.
-    """
+    """Ofertantes de carona comunitária."""
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(160), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     phone = db.Column(db.String(50), nullable=False)
-
     ride_from = db.Column(db.String(200), nullable=True)
     ride_to = db.Column(db.String(200), nullable=True)
     ride_time = db.Column(db.String(80), nullable=True)
     meeting_point = db.Column(db.String(200), nullable=True)
-
     offers_ride = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(20), nullable=False, default="PENDING")
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     approved_at = db.Column(db.DateTime, nullable=True)
-
 
 class ChatThread(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -209,7 +199,6 @@ class ChatThread(db.Model):
     reported_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     thread_id = db.Column(db.Integer, db.ForeignKey("chat_thread.id"), nullable=False)
@@ -217,15 +206,12 @@ class ChatMessage(db.Model):
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
 def init_db():
     with app.app_context():
         db.create_all()
 
-
 with app.app_context():
     db.create_all()
-
 
 # ---------------------------
 # Telegram
@@ -266,24 +252,26 @@ def home():
         safety=safety_guidance_payload(),
     )
 
-
 @app.get("/mapa")
 def mapa_view():
     return render_template("map.html", logged_in=is_logged_in())
-
 
 @app.get("/rastrear/<code>")
 def public_tracker(code):
     ws = WalkSession.query.filter_by(session_code=code).first()
     if not ws:
         return "Sessão expirada ou não encontrada.", 404
-    return render_template("rastrear.html", session_code=ws.session_code, label=ws.label)
+    return render_template("tracker.html", session_code=ws.session_code, label=ws.label)
 
+@app.get("/mural")
+@login_required
+def mural_view():
+    """NOVA: Rota HTML do Mural Comunitário"""
+    return render_template("mural.html", user_name=session.get("user_name"))
 
 @app.get("/login")
 def login():
     return render_template("login.html")
-
 
 @app.post("/login")
 def login_post():
@@ -300,11 +288,9 @@ def login_post():
     })
     return redirect(url_for("home"))
 
-
 @app.get("/register")
 def register():
     return render_template("register.html")
-
 
 @app.post("/register")
 def register_post():
@@ -336,23 +322,19 @@ def register_post():
     })
     return redirect(url_for("home"))
 
-
 @app.post("/logout")
 def logout():
     session.clear()
     return redirect(url_for("home"))
-
 
 @app.get("/admin")
 @admin_required
 def admin():
     return render_template("admin.html")
 
-
 @app.get("/admin/login")
 def admin_login():
     return render_template("admin_login.html")
-
 
 @app.post("/admin/login")
 def admin_login_post():
@@ -362,18 +344,15 @@ def admin_login_post():
         return redirect(url_for("admin"))
     return render_template("admin_login.html", error="Senha inválida.")
 
-
 @app.post("/admin/logout")
 def admin_logout():
     session.pop("is_admin", None)
     return redirect(url_for("home"))
 
-
 @app.get("/admin/approvals")
 @admin_required
 def admin_approvals():
     return render_template("admin_approvals.html")
-
 
 # ---------------------------
 # Auth helper API
@@ -395,6 +374,50 @@ def api_me():
         "phone": acc.phone,
         "course": acc.course,
     })
+
+# ---------------------------
+# API: Mural Comunitário (NOVO)
+# ---------------------------
+@app.get("/api/posts")
+@login_required
+def list_posts():
+    posts = Post.query.filter_by(is_hidden=False).order_by(Post.created_at.desc()).limit(50).all()
+    return jsonify([{
+        "id": p.id,
+        "content": p.content,
+        "author": "Anônime" if p.is_anonymous else public_name(p.author.name),
+        "created_at": p.created_at.strftime("%d/%m %H:%M"),
+        "is_mine": p.user_id == session.get("user_id")
+    } for p in posts])
+
+@app.post("/api/posts")
+@login_required
+def create_post():
+    data = request.get_json() or {}
+    content = data.get("content", "").strip()
+    
+    if not content or len(content) > 500:
+        return jsonify({"error": "Texto muito longo ou vazio."}), 400
+    
+    p = Post(
+        user_id=session["user_id"], 
+        content=content, 
+        is_anonymous=data.get("is_anonymous", False)
+    )
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+@app.post("/api/posts/<int:post_id>/report")
+@login_required
+def report_post(post_id):
+    p = Post.query.get_or_404(post_id)
+    p.report_count += 1
+    # Esconde automaticamente após 5 denúncias da comunidade
+    if p.report_count >= 5: 
+        p.is_hidden = True
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 # ---------------------------
@@ -420,12 +443,10 @@ def list_places():
         for p in places
     ])
 
-
 @app.post("/api/places")
 @login_required
 def create_place():
     data = request.get_json() or {}
-
     expires = datetime.utcnow() + timedelta(days=7) if data.get("is_temporary") else None
 
     p = Place(
@@ -441,7 +462,6 @@ def create_place():
     db.session.commit()
     return jsonify({"ok": True})
 
-
 @app.post("/api/places/<int:place_id>/report")
 @login_required
 def report_place(place_id):
@@ -451,7 +471,6 @@ def report_place(place_id):
         p.is_hidden = True
     db.session.commit()
     return jsonify({"ok": True})
-
 
 # ---------------------------
 # API: Apoio da rede / SOS
@@ -498,7 +517,6 @@ def create_alert():
         "guidance": safety_guidance_payload(),
     })
 
-
 # ---------------------------
 # API: Caminhada segura
 # ---------------------------
@@ -512,7 +530,6 @@ def walk_start():
     db.session.commit()
 
     return jsonify({"ok": True, "session_code": code})
-
 
 @app.post("/api/walk/ping")
 def walk_ping():
@@ -530,7 +547,6 @@ def walk_ping():
 
     return jsonify({"ok": True})
 
-
 @app.post("/api/walk/finish")
 def walk_finish():
     data = request.get_json() or {}
@@ -541,7 +557,6 @@ def walk_finish():
         db.session.commit()
 
     return jsonify({"ok": True})
-
 
 @app.get("/api/walk/status/<code>")
 def walk_status(code):
@@ -562,7 +577,6 @@ def walk_status(code):
         "stale_minutes": 3,
     })
 
-
 # ---------------------------
 # API: Contatos
 # ---------------------------
@@ -579,7 +593,6 @@ def list_contacts():
         for c in contacts
     ])
 
-
 @app.post("/api/contacts")
 def add_contact():
     data = request.get_json() or {}
@@ -593,14 +606,12 @@ def add_contact():
     db.session.commit()
     return jsonify({"ok": True})
 
-
 @app.delete("/api/contacts/<int:cid>")
 def del_contact(cid):
     c = Contact.query.get_or_404(cid)
     db.session.delete(c)
     db.session.commit()
     return jsonify({"ok": True})
-
 
 # ---------------------------
 # API: Caronas
@@ -647,7 +658,6 @@ def carpool_apply():
         }
     })
 
-
 @app.get("/api/users/approved-rides")
 def list_rides():
     users = User.query.filter_by(status="APPROVED").order_by(User.approved_at.desc()).all()
@@ -662,7 +672,6 @@ def list_rides():
         }
         for u in users
     ])
-
 
 # ---------------------------
 # API: Chat seguro
@@ -685,7 +694,6 @@ def chat_start():
         "rider_display_name": public_name(rider.full_name),
     })
 
-
 @app.get("/api/chat/<int:tid>/messages")
 def get_msgs(tid):
     th = ChatThread.query.get_or_404(tid)
@@ -701,7 +709,6 @@ def get_msgs(tid):
         }
         for m in msgs
     ])
-
 
 @app.post("/api/chat/<int:tid>/send")
 def send_msg(tid):
@@ -724,7 +731,6 @@ def send_msg(tid):
     db.session.commit()
     return jsonify({"ok": True})
 
-
 @app.post("/api/chat/<int:tid>/report")
 def report_chat(tid):
     data = request.get_json() or {}
@@ -736,7 +742,6 @@ def report_chat(tid):
     db.session.commit()
 
     return jsonify({"ok": True})
-
 
 # ---------------------------
 # API: Administração
@@ -771,7 +776,6 @@ def export_data():
         ]
     })
 
-
 @app.get("/api/users/pending")
 @admin_required
 def get_pending_users():
@@ -791,7 +795,6 @@ def get_pending_users():
         for u in users
     ])
 
-
 @app.post("/api/users/<int:uid>/approve")
 @admin_required
 def approve_user(uid):
@@ -801,7 +804,6 @@ def approve_user(uid):
     db.session.commit()
     return jsonify({"ok": True})
 
-
 @app.post("/api/users/<int:uid>/reject")
 @admin_required
 def reject_user(uid):
@@ -810,7 +812,6 @@ def reject_user(uid):
     u.notes = request.get_json().get("notes", "") if request.is_json else ""
     db.session.commit()
     return jsonify({"ok": True})
-
 
 @app.get("/api/admin/reported-threads")
 @admin_required
@@ -828,7 +829,6 @@ def get_reported_threads():
             "is_blocked": t.is_blocked,
         })
     return jsonify(out)
-
 
 @app.post("/api/admin/threads/<int:tid>/block")
 @admin_required
