@@ -22,17 +22,20 @@ async function api(url, opts = {}) {
   return res.json();
 }
 
-function toast(msg, type = "info") {
+function toast(msg, type = "dark") {
   const el = document.createElement("div");
-  el.className = `alert alert-${type} shadow-lg rounded-4`;
+  el.className = `alert alert-${type} shadow-lg rounded-3 fw-semibold px-4`;
   el.style.position = "fixed";
-  el.style.right = "16px";
-  el.style.bottom = "16px";
+  el.style.left = "50%";
+  el.style.transform = "translateX(-50%)";
+  el.style.bottom = "24px";
   el.style.zIndex = "9999";
-  el.style.maxWidth = "420px";
+  el.style.width = "90%";
+  el.style.maxWidth = "400px";
+  el.style.textAlign = "center";
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 4500);
+  setTimeout(() => el.remove(), 4000);
 }
 
 function escapeHtml(s) {
@@ -43,12 +46,6 @@ function escapeHtml(s) {
     '"': "&quot;",
     "'": "&#39;"
   })[m]);
-}
-
-function fmtMMSS(totalSec) {
-  const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
-  const ss = String(Math.floor(totalSec % 60)).padStart(2, "0");
-  return `${mm}:${ss}`;
 }
 
 function getPosition() {
@@ -71,9 +68,8 @@ function renderRideMeta(u) {
   return parts.join(" • ");
 }
 
-
 // ==========================================
-// APOIO DA REDE / ALERTAS
+// APOIO DA REDE / ALERTAS (SOS / CHECK-IN)
 // ==========================================
 
 async function sendAlert(kind, message, coords) {
@@ -91,13 +87,9 @@ async function sendAlert(kind, message, coords) {
   });
 
   if (out.telegram && out.telegram.sent) {
-    toast("Aviso enviado para sua rede de apoio. ✅", kind === "CHECKIN" ? "success" : "warning");
+    toast(`Alerta enviado para sua rede de apoio! ✅`, kind === "SOS" ? "danger" : "success");
   } else {
-    toast("Aviso registrado no sistema.", "warning");
-  }
-
-  if (out.guidance && out.guidance.immediate_risk_message) {
-    console.info("Guidance:", out.guidance.immediate_risk_message);
+    toast("Alerta registrado no sistema.", "warning");
   }
 
   return out;
@@ -106,14 +98,13 @@ async function sendAlert(kind, message, coords) {
 const btnSOS = document.getElementById("btnSOS");
 if (btnSOS) {
   btnSOS.addEventListener("click", async () => {
+    if (!confirm("🚨 Tem certeza? Isso enviará um alerta para a sua rede com a sua localização!")) return;
+
     btnSOS.disabled = true;
     const oldHtml = btnSOS.innerHTML;
-    btnSOS.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Preparando apoio...`;
+    btnSOS.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Buscando GPS...`;
 
     try {
-      const msg =
-        prompt("Descreva brevemente a situação (ex.: 'Estou saindo do campus e gostaria de acompanhamento')") || "";
-
       let coords = null;
       try {
         const pos = await getPosition();
@@ -122,11 +113,7 @@ if (btnSOS) {
         toast("Não foi possível pegar o GPS. O apoio será enviado sem mapa.", "warning");
       }
 
-      const out = await sendAlert("SUPPORT", msg, coords);
-
-      if (out.guidance && out.guidance.immediate_risk_message) {
-        toast(out.guidance.immediate_risk_message, "danger");
-      }
+      await sendAlert("SOS", "Alerta de Emergência", coords);
     } catch (e) {
       toast("Erro ao pedir apoio da rede.", "danger");
     } finally {
@@ -163,40 +150,23 @@ if (btnCheckin) {
   });
 }
 
-const btnTest = document.getElementById("btnTest");
-if (btnTest) {
-  btnTest.addEventListener("click", async () => {
-    try {
-      const out = await sendAlert("TEST", "Teste da rede de apoio (sem localização).", null);
-      toast("Teste enviado com sucesso.", "success");
-
-      if (out.guidance && out.guidance.human_rights_report_label) {
-        console.info(out.guidance.human_rights_report_label, out.guidance.human_rights_report_url);
-      }
-    } catch (e) {
-      toast(e.message, "danger");
-    }
-  });
-}
-
-
 // ==========================================
-// ACOMPANHAMENTO DE TRAJETO
+// ACOMPANHAMENTO DE TRAJETO ("ME ACOMPANHA?")
 // ==========================================
 
 let walkSessionCode = null;
 let walkIntervalId = null;
-let walkCountdownId = null;
-let walkNextIn = 0;
 
 const btnWalkStart = document.getElementById("btnWalkStart");
 if (btnWalkStart) {
   btnWalkStart.addEventListener("click", async () => {
-    const label = document.getElementById("walkLabel").value || "Caminhada";
-    const freqMs = parseInt(document.getElementById("walkInterval").value, 10) * 1000;
+    const labelInput = document.getElementById("walkLabel");
+    const label = labelInput && labelInput.value.trim() !== "" ? labelInput.value.trim() : "Voltando pra casa";
 
     try {
       btnWalkStart.disabled = true;
+      btnWalkStart.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Iniciando...';
+
       const res = await api("/api/walk/start", {
         method: "POST",
         body: JSON.stringify({ label })
@@ -207,33 +177,16 @@ if (btnWalkStart) {
       document.getElementById("walkCode").textContent = walkSessionCode;
 
       await walkPing();
-      walkIntervalId = setInterval(walkPing, freqMs);
+      walkIntervalId = setInterval(walkPing, 60000); // 60 segundos fixo
 
-      startWalkCountdown(Math.floor(freqMs / 1000));
-
-      toast("Acompanhamento iniciado. Compartilhe o link com alguém de confiança.", "success");
+      toast("Rastreador ativado! Compartilhe o link.", "success");
     } catch (e) {
       toast(e.message, "danger");
+    } finally {
       btnWalkStart.disabled = false;
+      btnWalkStart.innerHTML = 'Começar Trajeto';
     }
   });
-}
-
-function startWalkCountdown(seconds) {
-  walkNextIn = seconds;
-  updateWalkNextPing();
-
-  if (walkCountdownId) clearInterval(walkCountdownId);
-
-  walkCountdownId = setInterval(() => {
-    walkNextIn = Math.max(0, walkNextIn - 1);
-    updateWalkNextPing();
-  }, 1000);
-}
-
-function updateWalkNextPing() {
-  const el = document.getElementById("walkNextPing");
-  if (el) el.textContent = "Próximo em: " + fmtMMSS(walkNextIn);
 }
 
 async function walkPing() {
@@ -249,22 +202,16 @@ async function walkPing() {
   try {
     await api("/api/walk/ping", {
       method: "POST",
-      body: JSON.stringify({
-        session_code: walkSessionCode,
-        lat,
-        lon
-      })
+      body: JSON.stringify({ session_code: walkSessionCode, lat, lon })
     });
 
     const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+    
     const lastEl = document.getElementById("walkLastPing");
-    if (lastEl) lastEl.textContent = "Último check-in: " + now.toLocaleTimeString();
-
-    const freqMs = parseInt(document.getElementById("walkInterval").value, 10) * 1000;
-    walkNextIn = Math.floor(freqMs / 1000);
-    updateWalkNextPing();
+    if (lastEl) lastEl.textContent = `Última atualização: ${timeStr}`;
   } catch (e) {
-    console.error("Falha no check-in", e);
+    console.error("Falha no check-in do trajeto", e);
   }
 }
 
@@ -278,15 +225,14 @@ document.getElementById("btnWalkFinish")?.addEventListener("click", async () => 
     });
 
     clearInterval(walkIntervalId);
-    clearInterval(walkCountdownId);
     walkSessionCode = null;
     walkIntervalId = null;
-    walkCountdownId = null;
 
     document.getElementById("walkBox").classList.add("d-none");
-    document.getElementById("btnWalkStart").disabled = false;
-
     toast("Acompanhamento encerrado. Que bom que chegou bem!", "success");
+    
+    // Opcional: Avisar a rede que encerrou
+    await sendAlert("CHECKIN", "Cheguei ao destino (Modo Acompanhamento encerrado).", null);
   } catch (e) {
     toast(e.message, "danger");
   }
@@ -294,6 +240,8 @@ document.getElementById("btnWalkFinish")?.addEventListener("click", async () => 
 
 document.getElementById("btnWalkUncomfortable")?.addEventListener("click", async () => {
   if (!walkSessionCode) return;
+  const btn = document.getElementById("btnWalkUncomfortable");
+  btn.disabled = true;
 
   try {
     let coords = null;
@@ -302,39 +250,35 @@ document.getElementById("btnWalkUncomfortable")?.addEventListener("click", async
       coords = pos.coords;
     } catch (e) {}
 
-    const out = await sendAlert(
+    await sendAlert(
       "CHECKIN",
-      "Alerta discreto: estou desconfortável durante o trajeto e gostaria de acompanhamento.",
+      "ALERTA DISCRETO: estou desconfortável durante o trajeto. Fiquem de olho no mapa.",
       coords
     );
 
-    toast("Alerta discreto enviado.", "warning");
-
-    if (out.guidance && out.guidance.immediate_risk_message) {
-      console.info(out.guidance.immediate_risk_message);
-    }
+    toast("Alerta discreto enviado para a rede.", "warning");
   } catch (e) {
-    toast(e.message, "danger");
+    toast("Erro ao enviar o alerta.", "danger");
+  } finally {
+    btn.disabled = false;
   }
 });
 
-document.getElementById("btnCopyLink")?.addEventListener("click", async () => {
+document.getElementById("btnCopyLink")?.addEventListener("click", () => {
   if (!walkSessionCode) return;
 
   const link = `${window.location.origin}/rastrear/${walkSessionCode}`;
   try {
-    await navigator.clipboard.writeText(
-      `🌈 Rainbow Safe: acompanhe meu trajeto em tempo real.\n📍 Link: ${link}`
-    );
-    toast("Link copiado! Compartilhe com alguém de confiança.", "info");
+    const mensagem = encodeURIComponent(`📍 Acompanhe minha rota pelo Rainbow Safe. Se eu sumir, acione a rede!\n\nLink: ${link}`);
+    window.open(`https://api.whatsapp.com/send?text=${mensagem}`, "_blank");
   } catch (e) {
-    toast("Não foi possível copiar o link.", "danger");
+    toast("Não foi possível gerar o link.", "danger");
   }
 });
 
 
 // ==========================================
-// CONTATOS DE CONFIANÇA
+// CONTATOS DE CONFIANÇA ("MINHA REDE")
 // ==========================================
 
 const contactForm = document.getElementById("contactForm");
@@ -344,13 +288,19 @@ if (contactForm && contactsList) {
   async function loadContacts() {
     try {
       const data = await api("/api/contacts");
+      
+      if (data.length === 0) {
+        contactsList.innerHTML = `<li class="list-group-item text-secondary border-0 text-center py-3 bg-light rounded-3">Nenhum contato cadastrado ainda.</li>`;
+        return;
+      }
+
       contactsList.innerHTML = data.map(c => `
-        <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
           <div>
-            <strong class="d-block text-dark">${escapeHtml(c.name)}</strong>
-            <small class="text-secondary">${escapeHtml(c.phone || c.email || '')}</small>
+            <div class="fw-semibold text-dark">${escapeHtml(c.name)}</div>
+            <div class="small text-secondary">${escapeHtml(c.email || "")}${c.phone ? " • " + escapeHtml(c.phone) : ""}</div>
           </div>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteContact(${c.id})">
+          <button class="btn btn-sm btn-outline-danger rounded-3 px-3" onclick="deleteContact(${c.id})">
             <i class="bi bi-trash"></i>
           </button>
         </li>
@@ -365,6 +315,7 @@ if (contactForm && contactsList) {
       try {
         await api(`/api/contacts/${id}`, { method: "DELETE" });
         loadContacts();
+        toast("Contato removido.", "warning");
       } catch (e) {
         toast(e.message, "danger");
       }
@@ -383,7 +334,7 @@ if (contactForm && contactsList) {
 
       contactForm.reset();
       loadContacts();
-      toast("Contato adicionado.", "success");
+      toast("Contato adicionado com sucesso.", "success");
     } catch (e) {
       toast(e.message, "danger");
     }
@@ -392,9 +343,8 @@ if (contactForm && contactsList) {
   loadContacts();
 }
 
-
 // ==========================================
-// CARONA COM CUIDADO
+// CARONA COM CUIDADO E CHAT
 // ==========================================
 
 const rideApplyForm = document.getElementById("rideApplyForm");
@@ -413,29 +363,26 @@ if (rideApplyForm) {
       });
 
       document.getElementById("rideApplyStatus").innerHTML =
-        `<span class="text-success"><i class="bi bi-check-circle"></i> Perfil enviado para aprovação do admin.</span>`;
+        `<span class="text-success fw-bold"><i class="bi bi-check-circle"></i> Perfil enviado para aprovação.</span>`;
 
       rideApplyForm.reset();
-
-      if (out.guidance && out.guidance.message) {
-        toast(out.guidance.message, "warning");
-      }
+      if (typeof loadApprovedRides === "function") loadApprovedRides();
     } catch (e) {
       document.getElementById("rideApplyStatus").innerHTML =
-        `<span class="text-danger">${escapeHtml(e.message)}</span>`;
+        `<span class="text-danger fw-bold">${escapeHtml(e.message)}</span>`;
     }
   });
 }
 
 const rideApprovedList = document.getElementById("rideApprovedList");
 if (rideApprovedList) {
-  async function loadApprovedRides() {
+  window.loadApprovedRides = async function() {
     try {
       const data = await api("/api/users/approved-rides");
 
       if (data.length === 0) {
         rideApprovedList.innerHTML =
-          `<li class="list-group-item text-secondary text-center py-3">Ainda não há ofertantes aprovados.</li>`;
+          `<li class="list-group-item text-secondary text-center py-3 bg-light rounded-3 border-0 mt-2">Nenhuma carona disponível na rede neste momento.</li>`;
         return;
       }
 
@@ -444,13 +391,13 @@ if (rideApprovedList) {
           <div class="d-flex justify-content-between align-items-start gap-2">
             <div>
               <span class="fw-bold text-dark d-block">
-                <i class="bi bi-car-front-fill text-primary me-2"></i>${escapeHtml(u.display_name)}
+                <i class="bi bi-car-front-fill text-success me-2"></i>${escapeHtml(u.display_name)}
               </span>
               <small class="text-secondary d-block mt-1">${renderRideMeta(u) || "Trajeto não informado."}</small>
             </div>
-            <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm"
+            <button class="btn btn-sm btn-dark rounded-3 px-3 shadow-sm"
               onclick="openChat(${u.id}, '${escapeHtml(u.display_name)}')">
-              <i class="bi bi-chat-dots"></i> Conversar
+               Chat Seguro
             </button>
           </div>
         </li>
@@ -464,10 +411,7 @@ if (rideApprovedList) {
 }
 
 
-// ==========================================
-// CHAT SEGURO
-// ==========================================
-
+// CHAT MODAL LOGIC
 let currentThreadId = null;
 let chatInterval = null;
 let chatModalObj = null;
@@ -483,11 +427,12 @@ window.openChat = async (riderId, riderName) => {
     document.getElementById("chatWith").textContent = res.rider_display_name;
     document.getElementById("chatStatus").textContent = "";
 
-    if (!chatModalObj) {
-      chatModalObj = new bootstrap.Modal(document.getElementById("chatModal"));
+    const modalEl = document.getElementById("chatModal");
+    if (!chatModalObj && modalEl) {
+      chatModalObj = new bootstrap.Modal(modalEl);
     }
 
-    chatModalObj.show();
+    if (chatModalObj) chatModalObj.show();
     await pollChat();
 
     if (chatInterval) clearInterval(chatInterval);
@@ -520,21 +465,12 @@ async function pollChat() {
     box.innerHTML = msgs.map(m => {
       const isRider = m.sender === "rider";
       const bubbleClass = isRider ? "rider" : "anonymous";
-      const avatarIcon = isRider
-        ? '<i class="bi bi-car-front-fill chat-avatar"></i>'
-        : '<i class="bi bi-person-fill chat-avatar"></i>';
-      const timeStr = new Date(m.created_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+      const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       return `
         <div class="chat-bubble ${bubbleClass}">
-          ${avatarIcon}
-          <div class="chat-bubble-content">
-            ${escapeHtml(m.text)}
-            <span class="chat-bubble-time">${timeStr}</span>
-          </div>
+          ${escapeHtml(m.text)}
+          <span class="chat-bubble-time">${timeStr}</span>
         </div>
       `;
     }).join("");
@@ -570,10 +506,8 @@ document.getElementById("chatSend")?.addEventListener("click", async () => {
   } catch (e) {
     const statusEl = document.getElementById("chatStatus");
     if (statusEl) {
-      statusEl.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-shield-x"></i> ${escapeHtml(e.message)}</span>`;
-      setTimeout(() => {
-        statusEl.innerHTML = "";
-      }, 4000);
+      statusEl.innerHTML = `<span class="text-danger fw-bold"><i class="bi bi-shield-x"></i> Bloqueio: ${escapeHtml(e.message)}</span>`;
+      setTimeout(() => statusEl.innerHTML = "", 4000);
     }
   }
 });
@@ -587,23 +521,20 @@ document.getElementById("chatInput")?.addEventListener("keypress", function (e) 
 document.getElementById("chatReport")?.addEventListener("click", async () => {
   if (!currentThreadId) return;
 
-  if (confirm("Deseja denunciar esta conversa por comportamento inadequado ou quebra das regras de segurança?")) {
-    try {
-      await api(`/api/chat/${currentThreadId}/report`, {
-        method: "POST",
-        body: JSON.stringify({
-          reason: "Comportamento abusivo / quebra das regras de segurança"
-        })
-      });
+  const reason = prompt("Descreva o comportamento inadequado:");
+  if (!reason) return;
 
-      toast("Denúncia registrada. A conversa foi sinalizada.", "danger");
+  try {
+    await api(`/api/chat/${currentThreadId}/report`, {
+      method: "POST",
+      body: JSON.stringify({ reason })
+    });
 
-      const statusEl = document.getElementById("chatStatus");
-      if (statusEl) {
-        statusEl.innerHTML = `<span class="text-danger fw-bold">Conversa denunciada</span>`;
-      }
-    } catch (e) {
-      toast("Erro ao denunciar.", "danger");
-    }
+    toast("Denúncia registrada. A equipe foi acionada.", "danger");
+
+    const statusEl = document.getElementById("chatStatus");
+    if (statusEl) statusEl.innerHTML = `<span class="text-danger fw-bold">Conversa denunciada</span>`;
+  } catch (e) {
+    toast("Erro ao denunciar.", "danger");
   }
 });
