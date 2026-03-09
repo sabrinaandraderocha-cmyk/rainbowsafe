@@ -39,7 +39,7 @@
     <div class="row g-4">
 
       <div class="col-lg-6">
-        <div class="card shadow-sm mb-4 border-top border-danger border-4">
+        <div class="card shadow-sm mb-4 border-top border-danger border-4 rounded-4">
           <div class="card-body p-4">
             <h1 class="h4 fw-bold mb-1">Rede de Apoio e Segurança ✨</h1>
             <p class="text-secondary mb-3">
@@ -63,21 +63,30 @@
 
             <div class="d-grid gap-3 mb-4">
               <a href="tel:190" class="btn btn-dark btn-lg rounded-4 py-3 shadow-sm fw-bold">
-                🚓 Polícia — Ligar 190
+                🚓 Emergência — Ligar 190
               </a>
 
               <button id="btnSOS" class="btn btn-danger btn-lg rounded-4 py-3 shadow-sm fw-bold">
-                🚨 Enviar Alerta SOS
+                🚨 Pedir apoio da rede
               </button>
               <div class="small text-muted text-center" style="font-size: 0.8rem; margin-top: -10px;">
-                Avisa o Telegram e sua rede de contatos com sua localização exata.
+                Este alerta avisa sua rede de apoio. Não substitui atendimento policial em emergência.
               </div>
 
-              <button id="btnCheckin" class="btn btn-info btn-lg rounded-4 py-3 text-dark fw-bold shadow-sm">
-                📍 Avisar que cheguei bem
-              </button>
-              <div class="small text-muted text-center" style="font-size: 0.8rem; margin-top: -10px;">
-                Envia um aviso silencioso confirmando que você está em segurança.
+              <div class="row g-2 mt-1">
+                <div class="col-sm-6">
+                  <button id="btnCheckin" class="btn btn-info w-100 rounded-4 text-dark fw-bold shadow-sm" style="padding: 12px 0;">
+                    <i class="bi bi-geo-alt-fill me-1"></i> Check-in Seguro
+                  </button>
+                </div>
+                <div class="col-sm-6">
+                  <button id="btnTest" class="btn btn-outline-danger w-100 rounded-4 fw-semibold bg-white" style="padding: 12px 0;">
+                    Testar Apoio
+                  </button>
+                </div>
+              </div>
+              <div class="small text-muted text-center" style="font-size: 0.75rem;">
+                O Check-in avisa silenciosamente que você está bem.
               </div>
             </div>
 
@@ -89,48 +98,48 @@
 
             <hr class="my-5">
 
-            <div class="mb-4">
-              <h2 class="h5 fw-bold text-dark mb-1">
-                <i class="bi bi-geo-alt me-2"></i> Me Acompanha?
+            <div class="mb-3">
+              <h2 class="h4 fw-bold mb-1" style="color: #6f42c1;">
+                <i class="bi bi-geo-alt-fill me-2"></i> Me Acompanha? ✨
               </h2>
               <p class="small text-secondary">
                 Compartilhe seu trajeto ao vivo. Avisaremos sua rede se você parar de atualizar.
               </p>
             </div>
 
-            <div class="p-4 bg-white rounded-3 border shadow-sm mb-4">
-              <label class="form-label small fw-semibold text-dark mb-2">Para onde você vai?</label>
-              <input id="walkLabel" class="form-control bg-light border-0 mb-3" placeholder="Ex: Pra casa, Ponto do Terminal...">
+            <div class="p-4 bg-white rounded-4 border shadow-sm mb-4" style="border-top: 4px solid #6f42c1 !important;">
+              <label class="form-label small fw-bold text-dark mb-2">Para onde você vai, lenda?</label>
+              <input id="walkLabel" class="form-control form-control-lg bg-light border-0 mb-4" placeholder="Ex: Casa, Terminal, UFU...">
               
-              <button id="btnWalkStart" class="btn btn-dark w-100 rounded-3 shadow-sm fw-bold py-2">
-                Começar Trajeto
+              <button id="btnWalkStart" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm fw-bold">
+                <i class="bi bi-play-fill me-1"></i> Começar Trajeto
               </button>
             </div>
 
             <div id="walkBox" class="mt-3 d-none">
-              <div class="alert alert-secondary rounded-3 border p-3 shadow-sm">
-                <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="alert alert-primary rounded-4 border-primary p-4 shadow-sm" style="background-color: #f0f4ff;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
                   <div>
-                    <div class="fw-bold text-dark"><i class="bi bi-broadcast me-1"></i> Rastreador Ativo</div>
-                    <div class="small mt-1 text-secondary">
-                      Código: <span id="walkCode" class="font-monospace fw-bold text-dark"></span>
+                    <div class="fw-bold text-primary fs-5"><i class="bi bi-broadcast me-2"></i> Rastreador Ativo!</div>
+                    <div class="small mt-2 text-dark">
+                      Código da sessão: <span id="walkCode" class="font-monospace fw-bold bg-white px-2 py-1 rounded text-primary"></span>
                     </div>
                   </div>
                 </div>
 
-                <div class="small text-secondary mb-3">
-                  <i class="bi bi-clock-history me-1"></i> <span id="walkLastPing">Última atualização: buscando...</span>
+                <div class="small text-secondary mb-4 fw-semibold">
+                  <i class="bi bi-clock-history me-1"></i> <span id="walkLastPing">Buscando localização...</span>
                 </div>
 
-                <div class="d-flex gap-2 flex-wrap border-top border-secondary border-opacity-25 pt-3">
-                  <button id="btnCopyLink" class="btn btn-sm btn-outline-dark rounded-3 flex-fill fw-semibold">
+                <div class="d-flex gap-2 flex-wrap border-top border-primary border-opacity-25 pt-3">
+                  <button id="btnCopyLink" class="btn btn-outline-primary rounded-pill flex-fill fw-bold bg-white">
                     <i class="bi bi-whatsapp me-1"></i> Enviar Link
                   </button>
-                  <button id="btnWalkUncomfortable" class="btn btn-sm btn-warning rounded-3 flex-fill fw-semibold text-dark">
+                  <button id="btnWalkUncomfortable" class="btn btn-warning rounded-pill flex-fill fw-bold text-dark">
                     <i class="bi bi-exclamation-circle me-1"></i> Alerta Discreto
                   </button>
-                  <button id="btnWalkFinish" class="btn btn-sm btn-success rounded-3 w-100 mt-2 fw-semibold">
-                    <i class="bi bi-check2-circle me-1"></i> Cheguei bem (Encerrar)
+                  <button id="btnWalkFinish" class="btn btn-success rounded-pill w-100 mt-2 fw-bold">
+                    <i class="bi bi-stars me-1"></i> Cheguei vivíssima! (Encerrar)
                   </button>
                 </div>
               </div>
@@ -138,42 +147,42 @@
 
             <hr class="my-5">
 
-            <div class="mb-4">
-              <h2 class="h5 fw-bold text-dark mb-1">
-                <i class="bi bi-people me-2"></i> Minha Rede de Afeto
+            <div class="mb-3">
+              <h2 class="h4 fw-bold mb-1 text-danger">
+                <i class="bi bi-heart-fill me-2"></i> Minha Rede de Afeto 💖
               </h2>
               <p class="small text-secondary">
-                Contatos de segurança que receberão seus alertas e acompanhamentos.
+                Cadastre sua família escolhida! São essas as pessoas que vão receber seus alertas.
               </p>
             </div>
             
-            <form id="contactForm" class="bg-white p-4 rounded-3 border shadow-sm mb-4">
+            <form id="contactForm" class="bg-white p-4 rounded-4 border shadow-sm mb-4" style="border-top: 4px solid #dc3545 !important;">
               <div class="row g-3">
                 <div class="col-12">
-                  <label class="small fw-semibold text-secondary mb-1">Nome do contato</label>
-                  <input class="form-control bg-light border-0" name="name" placeholder="Ex: Maria" required>
+                  <label class="small fw-semibold text-secondary mb-1">Quem é a pessoa?</label>
+                  <input class="form-control form-control-lg bg-light border-0" name="name" placeholder="Ex: Mamys, Best..." required>
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-7">
                   <label class="small fw-semibold text-secondary mb-1">Email (opcional)</label>
                   <input class="form-control bg-light border-0" type="email" name="email" placeholder="email@exemplo.com">
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-5">
                   <label class="small fw-semibold text-secondary mb-1">WhatsApp</label>
                   <input class="form-control bg-light border-0" type="tel" name="phone" placeholder="(34) 9...">
                 </div>
                 
-                <div class="col-12 mt-3">
-                  <button class="btn btn-dark w-100 rounded-3 fw-semibold py-2">
-                    <i class="bi bi-person-plus me-1"></i> Adicionar contato
+                <div class="col-12 mt-4">
+                  <button class="btn btn-dark w-100 rounded-pill fw-bold py-2 shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i> Adicionar ao meu bonde
                   </button>
                 </div>
               </div>
             </form>
 
-            <div class="small text-secondary fw-semibold mb-2 text-uppercase" style="letter-spacing: 0.5px;">Contatos salvos:</div>
-            <ul id="contactsList" class="list-group list-group-flush border rounded-3 shadow-sm overflow-hidden mb-5"></ul>
+            <div class="small text-secondary fw-bold mb-3 ms-1 text-uppercase" style="letter-spacing: 1px;">Seu bonde atual:</div>
+            <ul id="contactsList" class="list-group list-group-flush border rounded-4 shadow-sm overflow-hidden mb-5"></ul>
           </div>
         </div>
       </div>
@@ -193,7 +202,7 @@
           </div>
         </div>
 
-        <div class="card shadow-sm border-top border-success border-4">
+        <div class="card shadow-sm border-top border-success border-4 rounded-4">
           <div class="card-body p-4">
             <h2 class="h5 fw-bold mb-1 text-success">
               <i class="bi bi-car-front-fill me-2"></i> Carona com cuidado
@@ -202,52 +211,59 @@
               Rede comunitária de caronas com mais segurança e responsabilidade.
             </p>
 
-            <div class="alert alert-warning rounded-3 small border-warning py-2">
+            <div class="alert alert-warning rounded-4 small border-warning py-3">
               <i class="bi bi-shield-exclamation me-1"></i>
               <strong>Segurança primeiro:</strong> prefira caronas apenas com pessoas que você conhece pessoalmente.
               Combine em <strong>ponto público</strong> e <strong>nunca compartilhe endereço exato</strong>.
             </div>
 
             <div class="accordion mb-4" id="accordionCarpool">
-              <div class="accordion-item border rounded-3 overflow-hidden">
+              <div class="accordion-item border rounded-4 overflow-hidden">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed fw-semibold bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCarpool">
                     🚗 Quero oferecer carona (cadastrar perfil)
                   </button>
                 </h2>
                 <div id="collapseCarpool" class="accordion-collapse collapse" data-bs-parent="#accordionCarpool">
-                  <div class="accordion-body bg-white p-3">
-                    <form id="rideApplyForm" class="row g-2">
+                  <div class="accordion-body bg-white p-4">
+                    <form id="rideApplyForm" class="row g-3">
                       <div class="col-12">
-                        <input class="form-control" name="full_name" placeholder="Seu nome completo" required>
-                      </div>
-
-                      <div class="col-12">
-                        <input class="form-control" type="email" name="email" placeholder="Seu email" required>
-                      </div>
-
-                      <div class="col-12">
-                        <input class="form-control" type="tel" name="phone" placeholder="Telefone de contato" required>
+                        <label class="small fw-semibold text-secondary">Seu nome completo</label>
+                        <input class="form-control bg-light border-0" name="full_name" required>
                       </div>
 
                       <div class="col-md-6">
-                        <input class="form-control" name="ride_from" placeholder="De onde você sai?">
+                        <label class="small fw-semibold text-secondary">Seu email</label>
+                        <input class="form-control bg-light border-0" type="email" name="email" required>
                       </div>
 
                       <div class="col-md-6">
-                        <input class="form-control" name="ride_to" placeholder="Para onde você vai?">
+                        <label class="small fw-semibold text-secondary">Telefone / WhatsApp</label>
+                        <input class="form-control bg-light border-0" type="tel" name="phone" required>
                       </div>
 
                       <div class="col-md-6">
-                        <input class="form-control" name="ride_time" placeholder="Horário aproximado">
+                        <label class="small fw-semibold text-secondary">De onde você sai?</label>
+                        <input class="form-control bg-light border-0" name="ride_from">
                       </div>
 
                       <div class="col-md-6">
-                        <input class="form-control" name="meeting_point" placeholder="Ponto de encontro público">
+                        <label class="small fw-semibold text-secondary">Para onde vai?</label>
+                        <input class="form-control bg-light border-0" name="ride_to">
                       </div>
 
-                      <div class="col-12 d-grid mt-2">
-                        <button class="btn btn-success rounded-pill">Enviar perfil para aprovação</button>
+                      <div class="col-md-6">
+                        <label class="small fw-semibold text-secondary">Horário aprox.</label>
+                        <input class="form-control bg-light border-0" name="ride_time">
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="small fw-semibold text-secondary">Ponto de encontro</label>
+                        <input class="form-control bg-light border-0" name="meeting_point">
+                      </div>
+
+                      <div class="col-12 d-grid mt-4">
+                        <button class="btn btn-success rounded-pill fw-bold shadow-sm">Enviar perfil para aprovação</button>
                       </div>
 
                       <div class="col-12 text-center mt-2">
@@ -259,8 +275,8 @@
               </div>
             </div>
 
-            <div class="small text-secondary fw-semibold mb-2">Ofertantes aprovados:</div>
-            <ul id="rideApprovedList" class="list-group list-group-flush border rounded-3"></ul>
+            <div class="small text-secondary fw-bold mb-3 ms-1 text-uppercase" style="letter-spacing: 1px;">Ofertantes aprovados:</div>
+            <ul id="rideApprovedList" class="list-group list-group-flush border rounded-4 shadow-sm overflow-hidden mb-2"></ul>
           </div>
         </div>
 
@@ -308,6 +324,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>
