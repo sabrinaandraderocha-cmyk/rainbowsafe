@@ -9,84 +9,108 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <style>
-    body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     .card { border-radius: 16px; border: none; }
-    .bg-admin { background-color: #212529; border-bottom: 4px solid #6f42c1; }
+    .bg-admin { background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%); border-bottom: 4px solid #6f42c1; }
+    .scroll-box { max-height: 400px; overflow-y: auto; padding-right: 10px; }
+    
+    /* Scroll customizado */
+    .scroll-box::-webkit-scrollbar { width: 6px; }
+    .scroll-box::-webkit-scrollbar-thumb { background-color: #ced4da; border-radius: 10px; }
+    
+    /* Estilos das caixas de alertas que o JS vai gerar */
+    .alert-card { border-radius: 12px; border-left: 5px solid; padding: 15px; margin-bottom: 12px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border: 1px solid #e9ecef; }
   </style>
 </head>
 <body>
   
-  <nav class="navbar navbar-expand-lg navbar-dark bg-admin shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-admin shadow-sm py-3">
     <div class="container">
-      <a class="navbar-brand fw-semibold d-flex align-items-center" href="/">
+      <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
         <i class="bi bi-arrow-left-circle me-2"></i> Rainbow Safe
       </a>
-      <span class="navbar-text text-light bg-dark bg-opacity-50 px-3 py-1 rounded-pill small border border-secondary">
+      <span class="navbar-text text-light bg-dark bg-opacity-50 px-3 py-1 rounded-pill small border border-secondary ms-2 d-none d-md-inline-block">
         <i class="bi bi-shield-lock-fill text-success me-1"></i> Modo Administrador
       </span>
-      <div class="d-flex gap-2 ms-auto">
-        <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="/admin/approvals">
-          <i class="bi bi-check-circle me-1"></i> Aprovações e Denúncias
-        </a>
-        <a class="btn btn-primary btn-sm rounded-pill px-3" href="/api/export.json">
-          <i class="bi bi-download me-1"></i> Exportar JSON
-        </a>
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="adminMenu">
+        <div class="d-flex gap-2 ms-auto mt-3 mt-lg-0">
+          <a class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold" href="/admin/approvals">
+            <i class="bi bi-check-circle me-1"></i> Aprovações e Denúncias
+          </a>
+          <a class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" href="/api/export.json">
+            <i class="bi bi-download me-1"></i> Exportar JSON
+          </a>
+          <form method="post" action="/admin/logout" class="m-0">
+            <button class="btn btn-danger btn-sm rounded-pill px-3 fw-bold" type="submit">Sair</button>
+          </form>
+        </div>
       </div>
     </div>
   </nav>
 
   <main class="container my-5">
     
-    <div class="row mb-4">
-      <div class="col-12">
-        <h1 class="h3 fw-bold text-dark">Monitoramento em Tempo Real</h1>
-        <p class="text-secondary">Acompanhe alertas de SOS e caminhadas ativas da comunidade.</p>
+    <div class="row mb-4 align-items-end">
+      <div class="col-12 col-md-8">
+        <h1 class="h3 fw-bold text-dark mb-1">Centro de Controle em Tempo Real</h1>
+        <p class="text-secondary mb-0">Acompanhe alertas de SOS e caminhadas ativas da comunidade.</p>
       </div>
     </div>
 
     <div class="row g-4">
       
-      <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
+      <div class="col-lg-7">
+        <div class="card shadow-sm h-100 border-top border-danger border-4">
           <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h2 class="h5 fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Alertas SOS (últimos 200)</h2>
-              <button id="btnRefreshAlerts" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+              <div>
+                <h2 class="h5 fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Registro de Alertas</h2>
+                <div class="text-secondary small mt-1">Histórico de SOS, Check-ins e Testes.</div>
+              </div>
+              <button id="btnRefreshAlerts" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
                 <i class="bi bi-arrow-clockwise"></i> Atualizar
               </button>
             </div>
-            <div class="text-secondary small mb-3 border-bottom pb-2">Registros de pânico, testes e check-ins manuais.</div>
             
-            <div id="alertsBox" class="mt-3" style="max-height: 500px; overflow-y: auto;"></div>
+            <div id="alertsBox" class="scroll-box p-1">
+              <div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Buscando alertas...</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-6">
-        <div class="card shadow-sm mb-4">
+      <div class="col-lg-5">
+        <div class="card shadow-sm mb-4 border-top border-primary border-4">
           <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h2 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-geo-alt-fill me-2"></i> Sessões “Voltar pra casa”</h2>
-              <button id="btnRefreshWalks" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+              <div>
+                <h2 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-geo-alt-fill me-2"></i> Monitoramento de Rotas</h2>
+                <div class="text-secondary small mt-1">Usuários com o "Me Acompanha" ativo.</div>
+              </div>
+              <button id="btnRefreshWalks" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm">
                 <i class="bi bi-arrow-clockwise"></i> Atualizar
               </button>
             </div>
-            <div class="text-secondary small mb-3 border-bottom pb-2">
-              Sessões com atraso de ping são marcadas automaticamente como <strong>“sem atualização”</strong>.
-            </div>
             
-            <div id="walksBox" class="mt-3" style="max-height: 300px; overflow-y: auto;"></div>
+            <div id="walksBox" class="scroll-box p-1" style="max-height: 250px;">
+              <div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Buscando trajetos...</div>
+            </div>
           </div>
         </div>
 
-        <div class="card shadow-sm bg-dark text-white">
+        <div class="card shadow-lg bg-dark text-white rounded-4 border-0">
           <div class="card-body p-4">
-            <h2 class="h6 text-warning fw-bold mb-3"><i class="bi bi-info-circle-fill me-2"></i> Status do Sistema e LGPD</h2>
-            <ul class="small text-light mb-0" style="opacity: 0.9; line-height: 1.6;">
-              <li><strong>Evolução do MVP:</strong> O sistema agora conta com login seguro (hash de senhas).</li>
-              <li><strong>Mapa Colaborativo:</strong> Pinos possuem expiração automática e sistema de moderação comunitária (denúncias) para evitar difamação.</li>
-              <li><strong>Proteção de Dados:</strong> O chat bloqueia o envio de endereços exatos automaticamente. Rotas do "Voltar pra casa" devem ser expurgadas periodicamente.</li>
-              <li><span class="text-warning">Para produção plena:</span> Recomenda-se migrar as filas de processamento de geolocalização para Redis/Celery e o banco para PostgreSQL.</li>
+            <h2 class="h6 text-warning fw-bold mb-3"><i class="bi bi-info-circle-fill me-2"></i> Segurança do Sistema e LGPD</h2>
+            <ul class="small text-light mb-0 ps-3" style="opacity: 0.9; line-height: 1.6;">
+              <li class="mb-2"><strong>Criptografia:</strong> As senhas são protegidas por hash para segurança dos usuários.</li>
+              <li class="mb-2"><strong>Moderação do Mapa:</strong> Pinos suspeitos são ocultados automaticamente após múltiplas denúncias.</li>
+              <li class="mb-2"><strong>Privacidade no Chat:</strong> O sistema bloqueia proativamente o compartilhamento de endereços.</li>
+              <li><span class="text-warning fw-bold">Dica Técnica:</span> Rotas finalizadas devem ser expurgadas da base periodicamente.</li>
             </ul>
           </div>
         </div>
@@ -96,6 +120,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/static/admin.js"></script>
+  <script src="/static/admin.js?v=2"></script>
 </body>
 </html>
