@@ -10,7 +10,7 @@
 
   <style>
     body {
-      background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 100%);
+      background: linear-gradient(135deg, #6f42c1 0%, #3457D5 100%); /* Ajustado para um tom levemente mais suave no azul */
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -20,13 +20,13 @@
     }
 
     .card {
-      border-radius: 20px;
+      border-radius: 16px;
       border: none;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
     .brand {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 700;
       color: #212529;
     }
@@ -37,11 +37,12 @@
       margin-top: 4px;
     }
 
+    /* Estilização do Botão */
     .btn-primary {
       background-color: #6f42c1;
       border-color: #6f42c1;
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 10px 12px;
       font-weight: 600;
       transition: all 0.3s ease;
     }
@@ -52,25 +53,27 @@
       transform: translateY(-2px);
     }
 
+    /* Estilização dos Inputs (Fundo azulado e sem borda aparente) */
     .form-control {
-      border-radius: 10px;
-      padding: 10px 15px;
-      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 12px 15px;
+      background-color: #eef2fa; /* O tom de azul claro da imagem */
+      border: 1px solid transparent; /* Remove a borda padrão */
+      color: #212529;
     }
 
     .form-control:focus {
+      background-color: #eef2fa;
       border-color: #6f42c1;
-      box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+      box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
     }
 
-    .password-wrapper {
-      position: relative;
-    }
-
+    /* Ícone de Senha centralizado verticalmente */
     .password-toggle {
       position: absolute;
       right: 15px;
-      top: 38px;
+      top: 50%;
+      transform: translateY(-50%);
       cursor: pointer;
       color: #6c757d;
     }
@@ -100,14 +103,16 @@
             <form method="post" class="row g-3">
               
               <div class="col-12">
-                <label for="email" class="form-label small fw-semibold text-dark">Email</label>
+                <label for="email" class="form-label small fw-bold text-dark mb-1">Email</label>
                 <input type="email" class="form-control" id="email" name="email" placeholder="nome@exemplo.com" required>
               </div>
 
-              <div class="col-12 password-wrapper">
-                <label for="password" class="form-label small fw-semibold text-dark">Senha</label>
-                <input type="password" class="form-control pe-5" id="password" name="password" placeholder="Sua senha" required>
-                <i class="bi bi-eye-slash password-toggle" id="togglePassword" title="Mostrar/Ocultar senha"></i>
+              <div class="col-12">
+                <label for="password" class="form-label small fw-bold text-dark mb-1">Senha</label>
+                <div class="position-relative">
+                  <input type="password" class="form-control pe-5" id="password" name="password" placeholder="••••••••" required>
+                  <i class="bi bi-eye-slash password-toggle" id="togglePassword" title="Mostrar/Ocultar senha"></i>
+                </div>
               </div>
 
               <div class="col-12 d-grid mt-4">
@@ -118,7 +123,7 @@
 
             </form>
 
-            <div class="text-center mt-4 pt-3 border-top small">
+            <div class="text-center mt-4 pt-4 border-top small">
               <span class="text-secondary">Não tem uma conta?</span> 
               <a href="/register" class="fw-bold text-decoration-none" style="color: #6f42c1;">Criar conta</a>
             </div>
@@ -127,7 +132,9 @@
         </div>
         
         <div class="text-center mt-4 text-white-50 small">
-          <a href="/" class="text-white-50 text-decoration-none"><i class="bi bi-arrow-left me-1"></i> Voltar para a página inicial</a>
+          <a href="/" class="text-white-50 text-decoration-none hover-white">
+            <i class="bi bi-arrow-left me-1"></i> Voltar para a página inicial
+          </a>
         </div>
 
       </div>
@@ -138,7 +145,7 @@
     const togglePassword = document.querySelector('#togglePassword');
     const password = document.querySelector('#password');
 
-    togglePassword.addEventListener('click', function (e) {
+    togglePassword.addEventListener('click', function () {
       const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
       password.setAttribute('type', type);
       this.classList.toggle('bi-eye');
