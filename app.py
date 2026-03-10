@@ -160,6 +160,8 @@ class Contact(db.Model):
 
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    # 🟢 ADICIONADO: Vincula o alerta ao usuário logado
+    user_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=True)
     kind = db.Column(db.String(30), nullable=False, default="SUPPORT")
     message = db.Column(db.Text, nullable=True)
     lat = db.Column(db.Float, nullable=True)
@@ -528,7 +530,16 @@ def create_alert():
     if kind not in {"SUPPORT", "CHECKIN", "TEST", "SOS"}:
         kind = "SUPPORT"
 
+    # 🟢 ADICIONADO: Pega as informações do usuário logado
+    user_id = session.get("user_id")
+    user_info = "Usuário Desconhecido (Não logado)"
+    if user_id:
+        user = Account.query.get(user_id)
+        if user:
+            user_info = f"{user.name} | 📞 {user.phone}"
+
     a = Alert(
+        user_id=user_id, # 🟢 ADICIONADO: Salva o ID no banco
         kind=kind,
         message=data.get("message"),
         lat=data.get("lat"),
@@ -538,21 +549,29 @@ def create_alert():
     db.session.add(a)
     db.session.commit()
 
+    # 🟢 ADICIONADO: Formatação rica do Telegram
+    if kind == "SOS":
+        header = "🚨 URGENTE: PRECISO DE AJUDA (SOS)"
+    elif kind == "CHECKIN":
+        header = "📍 COMPARTILHAMENTO DE LOCALIZAÇÃO"
+    else:
+        header = f"🌈 Rainbow Safe - {kind}"
+
     if a.lat is not None and a.lon is not None:
         maps_link = f"https://maps.google.com/?q={a.lat},{a.lon}"
-        msg = (
-            f"🌈 Rainbow Safe - {a.kind}\n"
-            f"📍 Mapa: {maps_link}\n"
-            f"💬 Mensagem: {a.message or 'Sem mensagem extra'}\n"
-            f"⚠️ Em risco imediato, orientar ligação para 190."
-        )
+        loc_text = f"📍 Mapa: {maps_link}"
     else:
-        msg = (
-            f"🌈 Rainbow Safe - {a.kind}\n"
-            f"📍 Localização: GPS indisponível/desativado\n"
-            f"💬 Mensagem: {a.message or 'Sem mensagem extra'}\n"
-            f"⚠️ Em risco imediato, orientar ligação para 190."
-        )
+        loc_text = "📍 Localização: GPS indisponível ou bloqueado pelo celular"
+
+    user_msg = a.message if a.message else "Nenhuma mensagem adicional digitada."
+
+    msg = (
+        f"{header}\n\n"
+        f"👤 Usuário: {user_info}\n"
+        f"{loc_text}\n"
+        f"💬 Mensagem: {user_msg}\n\n"
+        f"⚠️ Em risco imediato, orientar ligação para 190."
+    )
 
     telegram_result = send_telegram_message(msg)
 
