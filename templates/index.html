@@ -132,14 +132,14 @@
         
         <div class="d-flex align-items-center mb-2">
           <i class="bi bi-shield-fill-exclamation fs-3 text-danger me-3"></i>
-          <h5 class="fw-bold mb-0 text-dark">Central de Alerta Rápido</h5>
+          <h5 class="fw-bold mb-0 text-dark">Alertas e Check-in (Envio Único)</h5>
         </div>
         <p class="text-secondary small mb-3">
-          Ao acionar os botões abaixo, sua <strong>localização GPS exata</strong> será enviada imediatamente para os administradores da rede no Telegram. Use em caso de risco ou apenas para fazer Check-in.
+          Dê um "alô" rápido para a rede. Sua localização GPS exata será enviada <strong>uma única vez</strong> para o Telegram da nossa equipe.
         </p>
 
         <div class="mb-3">
-          <textarea id="alertMessage" class="form-control border rounded-3 bg-light text-dark shadow-sm" rows="2" style="resize: none;" placeholder="Opcional: O que está acontecendo? (Ex: Estou no estacionamento do 3Q e preciso de ajuda)"></textarea>
+          <textarea id="alertMessage" class="form-control border rounded-3 bg-light text-dark shadow-sm" rows="2" style="resize: none;" placeholder="Opcional: O que está acontecendo? (Ex: Cheguei no bloco 3Q)"></textarea>
         </div>
 
         <div class="row g-2">
@@ -153,7 +153,7 @@
           <div class="col-4">
             <button id="btnShareLocation" class="btn w-100 h-100 py-3 rounded-4 shadow-sm text-dark d-flex flex-column align-items-center justify-content-center border-0 transition-all" style="background-color: #0dcaf0;">
               <i class="bi bi-geo-alt-fill fs-4 mb-1"></i>
-              <span class="small fw-bold lh-sm text-center">Compartilhar<br>Local</span>
+              <span class="small fw-bold lh-sm text-center">Aviso Rápido<br>(Check-in)</span>
             </button>
           </div>
           
@@ -196,15 +196,15 @@
           <i class="bi bi-broadcast"></i>
         </div>
         <div>
-          <h2 class="h6 fw-bold mb-0 text-dark">Status ao Vivo (Trajeto)</h2>
-          <div class="small text-secondary">Mostre aos seus amigos que você chegou bem.</div>
+          <h2 class="h6 fw-bold mb-0 text-dark">Trajeto ao Vivo (Tempo Real)</h2>
+          <div class="small text-secondary">Gere um link para acompanharem seus passos em movimento.</div>
         </div>
       </div>
 
       <div class="bg-light p-3 rounded-4 border shadow-sm">
-        <input id="walkLabel" class="form-control bg-white border border-light rounded-pill px-4 py-2 mb-3 shadow-sm text-dark" placeholder="Para onde você está indo? (Ex: Casa)">
+        <input id="walkLabel" class="form-control bg-white border border-light rounded-pill px-4 py-2 mb-3 shadow-sm text-dark" placeholder="Para onde você está indo? (Ex: Ponto de ônibus)">
         <button id="btnWalkStart" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm py-2">
-          <i class="bi bi-play-fill me-1"></i> Iniciar Transmissão
+          <i class="bi bi-play-fill me-1"></i> Iniciar Transmissão Contínua
         </button>
       </div>
 
@@ -220,7 +220,7 @@
           
           <div class="d-flex gap-2 flex-wrap border-top border-primary border-opacity-25 pt-3">
             <button id="btnCopyLink" class="btn btn-sm btn-light text-primary rounded-pill flex-fill fw-bold shadow-sm">
-              <i class="bi bi-share-fill me-1"></i> Compartilhar
+              <i class="bi bi-share-fill me-1"></i> Copiar Link Seguro
             </button>
             <button id="btnWalkUncomfortable" class="btn btn-sm btn-warning text-dark rounded-pill flex-fill fw-bold shadow-sm">
               <i class="bi bi-eye me-1"></i> Alerta Discreto
@@ -239,7 +239,7 @@
           <i class="bi bi-heart-fill"></i>
         </div>
         <div>
-          <h2 class="h6 fw-bold mb-0 text-dark">Close Friends (Rede de Afeto)</h2>
+          <h2 class="h6 fw-bold mb-0 text-dark">Friends (Sua rede de cuidado)</h2>
           <div class="small text-secondary">Quem recebe seus alertas automáticos.</div>
         </div>
       </div>
@@ -345,7 +345,6 @@
   <script src="/static/app.js?v=3"></script>
   
   <script>
-    // Componente de UI Customizado para Toast (Feedback na tela)
     function showToastAlert(msg, type = "info") {
       const el = document.createElement("div");
       el.className = `alert alert-${type} shadow-lg rounded-4 font-monospace`;
@@ -359,7 +358,6 @@
       setTimeout(() => el.remove(), 4000);
     }
 
-    // Comunicação com o backend app.py (Rota que criamos com Telegram)
     async function sendEmergencyAPI(kind, message, coords) {
       const payload = { kind, message };
       if (coords) {
@@ -378,7 +376,6 @@
       return await res.json();
     }
 
-    // Função Principal de Clique nos Botões
     async function triggerEmergency(kind) {
       const msgInput = document.getElementById("alertMessage");
       const msgText = msgInput ? msgInput.value.trim() : "";
@@ -429,7 +426,6 @@
       );
     }
 
-    // Eventos de Escuta
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("btnNeedHelp")?.addEventListener("click", () => triggerEmergency("SOS"));
       document.getElementById("btnShareLocation")?.addEventListener("click", () => triggerEmergency("CHECKIN"));
